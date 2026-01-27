@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parsePayFastITN, verifyPayFastSignature } from '@/lib/payfast';
+import { 
+  sendPaymentConfirmationEmail, 
+  sendPaymentReceivedNotification 
+} from '@/lib/email';
 
 /**
  * POST /api/webhook/payfast
@@ -110,6 +114,29 @@ export async function POST(request: NextRequest) {
     // Production: actually process the payment and update member status
     if (itn.payment_status === 'COMPLETE') {
       console.log(`Payment confirmed for ${itn.email_address}`);
+      
+      // Send payment confirmation emails
+      const emailData = {
+        name: itn.name_first + (itn.name_last ? ` ${itn.name_last}` : ''),
+        email: itn.email_address,
+        amount: `R${parseFloat(itn.amount_gross).toFixed(2)}`,
+        paymentDate: new Date().toLocaleDateString('en-ZA', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        subscriptionToken: itn.token,
+      };
+
+      // Send emails asynchronously (don't block webhook response)
+      Promise.all([
+        sendPaymentConfirmationEmail(emailData),
+        sendPaymentReceivedNotification(emailData),
+      ]).catch((error) => {
+        console.error('Failed to send payment confirmation emails:', error);
+        // Log but don't fail the webhook
+      });
+
       // TODO: Update member status to ACTIVE in database
     } else if (itn.payment_status === 'FAILED') {
       console.log(`Payment failed for ${itn.email_address}`);

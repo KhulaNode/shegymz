@@ -1,0 +1,67 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { sendFormSubmissionEmail } from '@/lib/email';
+
+/**
+ * POST /api/contact
+ *
+ * Example API route for handling contact form submissions
+ * and sending them via email using Plunk.
+ * 
+ * This is a template you can use for any form submission.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    // Validate required fields
+    const { name, email, message } = body;
+
+    if (!name || !email || !message) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    if (!email.includes('@')) {
+      return NextResponse.json(
+        { error: 'Invalid email address' },
+        { status: 400 }
+      );
+    }
+
+    // Prepare form data for email
+    const formData = {
+      Name: name,
+      Email: email,
+      Message: message,
+      'Submitted At': new Date().toLocaleString('en-ZA', {
+        dateStyle: 'full',
+        timeStyle: 'short',
+      }),
+      // Add any other fields from your form
+      ...(body.phone && { Phone: body.phone }),
+      ...(body.subject && { Subject: body.subject }),
+    };
+
+    // Send email notification
+    const emailSent = await sendFormSubmissionEmail(formData, 'Contact Form');
+
+    if (!emailSent) {
+      // Email failed but don't fail the request
+      console.warn('Failed to send email notification');
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'Your message has been received. We\'ll get back to you soon!'
+    });
+  } catch (error) {
+    console.error('Contact form error:', error);
+    return NextResponse.json(
+      { error: 'Failed to submit contact form' },
+      { status: 500 }
+    );
+  }
+}
