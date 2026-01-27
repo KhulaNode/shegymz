@@ -61,8 +61,21 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-warmgray-200 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-warmgray-600">
-          <p>&copy; {currentYear} SheGymZ. All rights reserved.</p>
+        <div className="border-t border-warmgray-200 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-warmgray-600 gap-4">
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <p>&copy; {currentYear} SheGymZ. All rights reserved.</p>
+            <p className="text-sm">
+              Developed & maintained by{' '}
+              <a 
+                href="https://khulanode.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-plum-700 hover:text-plum-900 transition-colors font-semibold underline decoration-plum-400 hover:decoration-plum-700"
+              >
+                KhulaNode
+              </a>
+            </p>
+          </div>
           <div className="flex gap-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-plum-800 transition-colors">
               Privacy Policy

@@ -207,7 +207,7 @@ async function handlePaymentSuccess(event: PaystackWebhookEvent) {
  */
 async function handlePaymentFailed(event: PaystackWebhookEvent) {
   try {
-    const { customer, gateway_response, reference, amount, metadata } = event.data;
+    const { customer, gateway_response, reference, amount } = event.data;
 
     const customerEmail = customer.email;
     const customerName = `${customer.first_name} ${customer.last_name}`.trim();
