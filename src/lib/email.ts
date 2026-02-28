@@ -381,6 +381,55 @@ export async function sendPaymentFailedEmail(
 }
 
 /**
+ * Send free trial request notification to admin
+ */
+export async function sendFreeTrialRequestEmail(data: {
+  name: string;
+  email: string;
+  phone: string;
+  bodyGoals?: string;
+  referralName?: string;
+}): Promise<boolean> {
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@shegymz.com';
+
+    const emailBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #E91E63;">New Free Trial Request 🎉</h2>
+        <p>Someone has requested a free trial membership:</p>
+
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Email:</strong> <a href="mailto:${data.email}">${data.email}</a></p>
+          <p><strong>Phone:</strong> ${data.phone}</p>
+          ${data.bodyGoals ? `<p><strong>Body Goals:</strong> ${data.bodyGoals}</p>` : ''}
+          ${data.referralName ? `<p><strong>Referred By:</strong> ${data.referralName}</p>` : ''}
+        </div>
+
+        <p style="color: #666; font-size: 14px;">
+          Submitted on ${new Date().toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' })}
+        </p>
+        <p style="color: #666; font-size: 14px;">
+          This is an automated notification from the SheGymz free trial system.
+        </p>
+      </div>
+    `;
+
+    await plunk.emails.send({
+      to: adminEmail,
+      subject: `Free Trial Request: ${data.name}`,
+      body: emailBody,
+    });
+
+    console.log(`Free trial request email sent for: ${data.email}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send free trial request email:', error);
+    return false;
+  }
+}
+
+/**
  * Send generic form submission email (for contact forms, etc.)
  */
 export async function sendFormSubmissionEmail(
