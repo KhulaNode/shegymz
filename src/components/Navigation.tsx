@@ -42,6 +42,12 @@ export default function Navigation() {
             Subscription Details
           </a>
           <Link
+            href="/free-trial"
+            className="px-4 lg:px-8 py-2 lg:py-4 border border-plum-900 text-plum-900 text-sm lg:text-xl font-semibold rounded hover:bg-plum-50 transition-colors"
+          >
+            Free Trial
+          </Link>
+          <Link
             href="/subscribe"
             className="px-4 lg:px-10 py-2 lg:py-4 bg-plum-900 text-white text-sm lg:text-xl font-semibold rounded hover:bg-plum-800 transition-colors"
           >
@@ -86,8 +92,15 @@ export default function Navigation() {
               Subscription Details
             </a>
             <Link
+              href="/free-trial"
+              className="block w-full px-6 py-3 border border-plum-900 text-plum-900 text-lg font-semibold rounded hover:bg-plum-50 transition-colors text-center"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Free Trial
+            </Link>
+            <Link
               href="/subscribe"
-              className="block w-full px-6 py-3 bg-plum-900 text-white text-lg font-semibold rounded hover:bg-plum-800 transition-colors text-center mt-4"
+              className="block w-full px-6 py-3 bg-plum-900 text-white text-lg font-semibold rounded hover:bg-plum-800 transition-colors text-center"
               onClick={() => setIsMenuOpen(false)}
             >
               Subscribe Here

@@ -38,12 +38,20 @@ export default function LandingPage() {
             24/7 Access. Personal trainers included. No contracts.
           </p>
 
-          <Link
-            href="/subscribe"
-            className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-rose-300 text-plum-900 font-semibold rounded hover:bg-rose-200 transition-all duration-300 text-base sm:text-lg shadow-lg"
-          >
-            Subscribe Here
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/subscribe"
+              className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-rose-300 text-plum-900 font-semibold rounded hover:bg-rose-200 transition-all duration-300 text-base sm:text-lg shadow-lg"
+            >
+              Subscribe Here
+            </Link>
+            <Link
+              href="/free-trial"
+              className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-white/20 text-white font-semibold rounded border border-white/60 hover:bg-white/30 transition-all duration-300 text-base sm:text-lg shadow-lg backdrop-blur-sm"
+            >
+              Try a Free Trial
+            </Link>
+          </div>
         </div>
       </section>
 
