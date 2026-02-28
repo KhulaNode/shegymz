@@ -63,7 +63,7 @@ export default function SubscribePage() {
     setError('');
 
     try {
-      // Call API to initiate PayFast subscription
+      // Call API to initiate checkout (provider selected server-side via PAYMENTS_PROVIDER)
       const response = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -82,7 +82,7 @@ export default function SubscribePage() {
 
       const { redirectUrl } = await response.json();
 
-      // Redirect to PayFast
+      // Redirect to Yoco hosted checkout
       setStep('processing');
       window.location.href = redirectUrl;
     } catch (err) {
@@ -340,8 +340,8 @@ export default function SubscribePage() {
                   <div className="animate-spin h-12 w-12 border-4 border-warmgray-300 border-t-plum-900 rounded-full"></div>
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-plum-900 mb-2">Processing Payment</h2>
-              <p className="text-warmgray-700">Redirecting to PayFast...</p>
+              <h2 className="text-3xl font-bold text-plum-900 mb-2">Preparing Your Checkout</h2>
+              <p className="text-warmgray-700">Redirecting to secure checkout…</p>
             </div>
           </section>
         )}

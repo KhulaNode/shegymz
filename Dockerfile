@@ -40,6 +40,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
+# Create data directory for payment records (mounted as volume in production)
+RUN mkdir -p /app/data
+
 # Set correct permissions
 RUN chown -R nextjs:nodejs /app
 

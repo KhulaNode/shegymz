@@ -144,7 +144,7 @@ export async function sendSubscriptionInitiatedEmail(
 }
 
 /**
- * Send payment receipt email (replaces Paystack's default email)
+ * Send payment receipt email to the member
  * Custom branded receipt for SheGymz
  */
 export async function sendPaymentConfirmationEmail(

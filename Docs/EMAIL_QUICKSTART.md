@@ -10,7 +10,7 @@ Your SheGymz application now has full email notification support using Plunk!
    - ✉️ Welcome email sent to the user
    - 📧 Admin notification about new subscription
 
-2. **When payment is completed (PayFast webhook):**
+2. **When payment is completed (Yoco webhook):**
    - ✅ Payment confirmation email to the user
    - 💰 Payment received notification to admin
 

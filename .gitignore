@@ -37,3 +37,7 @@ yarn-error.log*
 next-env.d.ts
 
 Guide.md
+
+# Payment records — these are runtime data, not source code.
+# In production, back them up from the Docker volume, not from git.
+/data

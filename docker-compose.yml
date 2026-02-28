@@ -9,17 +9,18 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      # Paystack Configuration
-      - PAYSTACK_SECRET_KEY=${PAYSTACK_SECRET_KEY}
-      - NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=${NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY}
-      - PAYSTACK_PLAN_CODE=${PAYSTACK_PLAN_CODE}
-      - PAYSTACK_NOTIFICATION_EMAIL=${PAYSTACK_NOTIFICATION_EMAIL}
-      # Subscription & Callbacks
+      # ── Yoco Payments
+      - YOCO_SECRET_KEY=${YOCO_SECRET_KEY}
+      - YOCO_WEBHOOK_SECRET=${YOCO_WEBHOOK_SECRET}
+      - APP_BASE_URL=${APP_BASE_URL:-https://shegymz.com}
+      - PAYMENTS_DATA_DIR=/app/data
+      # ── Subscription pricing
       - NEXT_PUBLIC_SUBSCRIPTION_AMOUNT=${NEXT_PUBLIC_SUBSCRIPTION_AMOUNT:-399}
-      - NEXT_PUBLIC_PAYSTACK_CALLBACK_URL=${NEXT_PUBLIC_PAYSTACK_CALLBACK_URL:-https://shegymz.com/payment-success}
-      # Email Configuration
+      # ── Email
       - PLUNK_API_KEY=${PLUNK_API_KEY}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
+    volumes:
+      - payments-data:/app/data
     networks:
       - shegymz-network
     healthcheck:
@@ -28,9 +29,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    
+
     # ports:
     #   - "3000:3000"
+
+volumes:
+  payments-data:
+    driver: local
 
 networks:
   shegymz-network:
