@@ -13,9 +13,11 @@ import {
  * Yoco webhook handler for payment events.
  *
  * Security:
- *  - Signature verified via HMAC-SHA256 (X-Yoco-Signature header).
- *  - Set YOCO_WEBHOOK_SECRET in your env to enable verification.
- *    Webhooks are rejected when the secret is missing.
+ *  - Signature verified per Yoco's webhook verification spec:
+ *      Header:  webhook-signature  (format: "v1,{base64sig}")
+ *      Signed:  {webhook-id}.{webhook-timestamp}.{rawBody}
+ *      Secret:  base64-decode(YOCO_WEBHOOK_SECRET after stripping "whsec_" prefix)
+ *  - Replay protection: rejects requests where webhook-timestamp is > 3 min old.
  *
  * Idempotency:
  *  - paymentStore.alreadyActivated() guards against duplicate activations.
@@ -61,9 +63,15 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Signature verification ────────────────────────────────────────────────
-  const signature = request.headers.get('x-yoco-signature') ?? '';
+  // Yoco sends three headers used for verification + replay protection:
+  //   webhook-id        — unique event ID
+  //   webhook-timestamp — Unix seconds when the event was signed
+  //   webhook-signature — "v1,{base64sig}" (space-separated list)
+  const webhookId        = request.headers.get('webhook-id')        ?? '';
+  const webhookTimestamp = request.headers.get('webhook-timestamp') ?? '';
+  const signatureHeader  = request.headers.get('webhook-signature') ?? '';
 
-  if (!YocoProvider.verifyWebhookSignature(rawBody, signature)) {
+  if (!YocoProvider.verifyWebhookSignature(rawBody, webhookId, webhookTimestamp, signatureHeader)) {
     console.warn('[Yoco webhook] Invalid or missing signature — rejecting');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }

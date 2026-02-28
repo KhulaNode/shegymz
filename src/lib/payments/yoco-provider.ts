@@ -146,31 +146,72 @@ export class YocoProvider implements IPaymentProvider {
   /**
    * Verify a Yoco webhook signature.
    *
-   * Yoco sends the HMAC-SHA256 digest of the raw request body in the
-   * X-Yoco-Signature header, signed with YOCO_WEBHOOK_SECRET.
+   * Per Yoco docs:
+   *   https://developer.yoco.com/guides/online-payments/webhooks/verifying-the-events
+   *
+   * Algorithm:
+   *  1. Signed content = `{webhook-id}.{webhook-timestamp}.{rawBody}`
+   *  2. Secret key     = base64-decode(YOCO_WEBHOOK_SECRET after stripping "whsec_" prefix)
+   *  3. Expected sig   = HMAC-SHA256(signedContent, secretKey) encoded as base64
+   *  4. Header         = "webhook-signature", format: "v1,{base64sig}" (space-separated list)
+   *  5. Replay guard   = reject if |now − timestamp| > 3 minutes
    *
    * Uses constant-time comparison to prevent timing-based attacks.
    */
-  static verifyWebhookSignature(rawBody: string, signature: string): boolean {
+  static verifyWebhookSignature(
+    rawBody: string,
+    webhookId: string,
+    webhookTimestamp: string,
+    signatureHeader: string,
+  ): boolean {
     const secret = process.env.YOCO_WEBHOOK_SECRET ?? '';
     if (!secret) {
       console.warn('[Yoco] YOCO_WEBHOOK_SECRET is not set — rejecting webhook');
       return false;
     }
 
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(rawBody)
-      .digest('hex');
-
-    try {
-      return crypto.timingSafeEqual(
-        Buffer.from(expected, 'hex'),
-        Buffer.from(signature, 'hex'),
-      );
-    } catch {
-      // Buffers of different length throw — means signature is wrong
+    if (!webhookId || !webhookTimestamp || !signatureHeader) {
       return false;
     }
+
+    // Replay attack protection: reject if timestamp is more than 3 minutes from now
+    const timestampSec = parseInt(webhookTimestamp, 10);
+    if (isNaN(timestampSec) || Math.abs(Date.now() / 1000 - timestampSec) > 180) {
+      console.warn('[Yoco] Webhook timestamp too old or in future — rejecting');
+      return false;
+    }
+
+    // Strip "whsec_" prefix and base64-decode the remainder to get raw key bytes
+    const secretBytes = Buffer.from(secret.replace(/^whsec_/, ''), 'base64');
+
+    // Build the signed content
+    const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`;
+
+    // Compute expected signature as base64
+    const expectedSignature = crypto
+      .createHmac('sha256', secretBytes)
+      .update(signedContent)
+      .digest('base64');
+
+    // Header value is a space-separated list of "v1,{base64sig}" entries.
+    // Check each — any match is a valid signature.
+    const entries = signatureHeader.split(' ');
+    for (const entry of entries) {
+      const commaIdx = entry.indexOf(',');
+      if (commaIdx === -1) continue;
+      const candidate = entry.slice(commaIdx + 1);
+      try {
+        if (
+          candidate.length === expectedSignature.length &&
+          crypto.timingSafeEqual(Buffer.from(candidate), Buffer.from(expectedSignature))
+        ) {
+          return true;
+        }
+      } catch {
+        // timingSafeEqual throws on mismatched buffer lengths — skip entry
+      }
+    }
+
+    return false;
   }
 }
