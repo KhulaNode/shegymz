@@ -93,10 +93,10 @@ export default function FreeTrialPage() {
             <div className="max-w-2xl mx-auto px-6">
               <div className="mb-12 text-center">
                 <h1 className="text-4xl md:text-5xl font-bold text-plum-900 mb-4">
-                  Free Trial
+                  3-Day Free Trial
                 </h1>
                 <p className="text-lg text-warmgray-700">
-                  Fill in your details and we&apos;ll reach out to get you started — no payment needed.
+                  Get 3 full days of access — no payment, no commitment. Fill in your details and we&apos;ll reach out to get you started.
                 </p>
               </div>
 
@@ -213,7 +213,7 @@ export default function FreeTrialPage() {
               </form>
 
               <div className="mt-8 p-6 bg-rose-50 border border-rose-200 rounded text-center text-sm text-warmgray-700">
-                Your information is private and secure. We only contact you to arrange your free trial.
+                Your information is private and secure. We only contact you to arrange your 3-day free trial — no payment or card details required.
               </div>
             </div>
           </section>
@@ -228,7 +228,7 @@ export default function FreeTrialPage() {
                   Review Your Request
                 </h1>
                 <p className="text-lg text-warmgray-700">
-                  Confirm your details and submit — we&apos;ll be in touch to schedule your free trial.
+                  Confirm your details and submit — we&apos;ll be in touch to schedule your 3-day free trial.
                 </p>
               </div>
 
@@ -266,8 +266,8 @@ export default function FreeTrialPage() {
                   <h3 className="font-semibold text-plum-900 mb-3">What Happens Next</h3>
                   <ul className="space-y-2 text-sm text-warmgray-700">
                     <li>✓ We&apos;ll review your request within 24 hours</li>
-                    <li>✓ Someone from SheGymZ will contact you to schedule your trial</li>
-                    <li>✓ No payment required for the free trial</li>
+                    <li>✓ Someone from SheGymZ will contact you to schedule your 3-day trial</li>
+                    <li>✓ 3 full days of access — no payment, no contracts</li>
                     <li>✓ Experience all facilities and classes firsthand</li>
                   </ul>
                 </div>
@@ -329,7 +329,7 @@ export default function FreeTrialPage() {
                 Thanks, <span className="font-semibold">{formData.fullName}</span>!
               </p>
               <p className="text-warmgray-600 mb-10">
-                We&apos;ve received your free trial request and will be in touch within 24 hours to arrange your session.
+                We&apos;ve received your 3-day free trial request and will be in touch within 24 hours to get you started.
               </p>
 
               <div className="bg-white rounded-lg shadow p-6 border border-warmgray-200 text-left mb-8 space-y-3">

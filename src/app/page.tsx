@@ -49,7 +49,7 @@ export default function LandingPage() {
               href="/free-trial"
               className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-white/20 text-white font-semibold rounded border border-white/60 hover:bg-white/30 transition-all duration-300 text-base sm:text-lg shadow-lg backdrop-blur-sm"
             >
-              Try a Free Trial
+              Try 3 Days Free
             </Link>
           </div>
         </div>

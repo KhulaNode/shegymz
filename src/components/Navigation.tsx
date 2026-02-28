@@ -45,7 +45,7 @@ export default function Navigation() {
             href="/free-trial"
             className="px-4 lg:px-8 py-2 lg:py-4 border border-plum-900 text-plum-900 text-sm lg:text-xl font-semibold rounded hover:bg-plum-50 transition-colors"
           >
-            Free Trial
+            3-Day Free Trial
           </Link>
           <Link
             href="/subscribe"
@@ -96,7 +96,7 @@ export default function Navigation() {
               className="block w-full px-6 py-3 border border-plum-900 text-plum-900 text-lg font-semibold rounded hover:bg-plum-50 transition-colors text-center"
               onClick={() => setIsMenuOpen(false)}
             >
-              Free Trial
+              3-Day Free Trial
             </Link>
             <Link
               href="/subscribe"
