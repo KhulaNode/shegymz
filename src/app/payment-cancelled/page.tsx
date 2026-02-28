@@ -39,7 +39,7 @@ export default function PaymentCancelledPage() {
         </div>
         <p className="mt-8 text-sm text-warmgray-600">
           Need help?{' '}
-          <a href="mailto:support@shegymz.com" className="underline hover:text-plum-800">
+          <a href="mailto:admin@shegymz.com" className="underline hover:text-plum-800">
             Contact support
           </a>
         </p>

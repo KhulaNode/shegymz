@@ -100,8 +100,8 @@ function PaymentStatusContent() {
             <div className="bg-rose-100 border border-rose-300 rounded p-6 mb-8">
               <p className="text-sm text-warmgray-700">
                 Didn&apos;t get an email? Check your spam folder or contact us at{' '}
-                <a href="mailto:support@shegymz.com" className="underline">
-                  support@shegymz.com
+                <a href="mailto:admin@shegymz.com" className="underline">
+                  admin@shegymz.com
                 </a>
                 .
               </p>
