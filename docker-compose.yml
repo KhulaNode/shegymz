@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: shegymz
+    container_name: shegymz-yoco
     restart: unless-stopped
     environment:
       - NODE_ENV=production
