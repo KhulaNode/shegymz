@@ -8,6 +8,16 @@ import { useState } from 'react';
 
 export default function LandingPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  const carouselVideos = [
+    '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.11.02.mp4',
+    '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.11.03.mp4',
+    '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.11.20.mp4',
+    '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.11.39.mp4',
+    '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.13.23.mp4',
+    '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.14.50.mp4',
+  ];
 
   return (
     <>
@@ -15,16 +25,17 @@ export default function LandingPage() {
 
       {/* HERO SECTION */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background video with overlay */}
+        {/* Background video carousel with overlay */}
         <div className="absolute inset-0 z-0">
           <video
+            key={carouselIndex}
             autoPlay
-            loop
             muted
             playsInline
-            className="absolute inset-0 w-full h-full object-cover"
+            onEnded={() => setCarouselIndex(i => (i + 1) % carouselVideos.length)}
+            className="absolute inset-0 w-full h-full object-cover animate-fade-in"
           >
-            <source src="/images/showcasevideo2.mp4" type="video/mp4" />
+            <source src={carouselVideos[carouselIndex]} type="video/mp4" />
           </video>
           {/* Purple gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-plum-900/50 via-plum-800/30 to-plum-900/70"></div>
