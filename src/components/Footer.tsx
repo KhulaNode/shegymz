@@ -72,9 +72,9 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <span>✉️</span>
-                <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'info@shegymz.com'}`}
+                <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@@shegymz.com'}`}
                    className="hover:text-plum-800 transition-colors">
-                  {process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'info@shegymz.com'}
+                  {process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@@shegymz.com'}
                 </a>
               </li>
             </ul>
