@@ -15,16 +15,17 @@ export default function LandingPage() {
 
       {/* HERO SECTION */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background image with overlay */}
+        {/* Background video with overlay */}
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/IMG_3776.jpeg"
-            alt="Private women's fitness space"
-            fill
-            className="object-cover"
-            priority
-            quality={85}
-          />
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="/images/showcasevideo.mp4" type="video/mp4" />
+          </video>
           {/* Purple gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-plum-900/50 via-plum-800/30 to-plum-900/70"></div>
         </div>
@@ -206,8 +207,8 @@ export default function LandingPage() {
             <div className="relative h-64 rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
                  onClick={() => setSelectedImage('/images/IMG_3780.jpeg')}>
               <Image
-                src="/images/IMG_3780.jpeg"
-                alt="Training equipment"
+                src="/public/images/showcase1.jpeg"
+                alt="Lady training"
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-300"
                 quality={85}
@@ -240,7 +241,7 @@ export default function LandingPage() {
             <div className="relative h-64 rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
                  onClick={() => setSelectedImage('/images/IMG-20260110-WA0047.jpg')}>
               <Image
-                src="/images/IMG-20260110-WA0047.jpg"
+                src="/public/images/showcase2.jpeg"
                 alt="Wellness space"
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-300"
