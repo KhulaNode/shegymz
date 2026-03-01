@@ -24,7 +24,7 @@ export default function LandingPage() {
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
           >
-            <source src="/images/showcasevideo.mp4" type="video/mp4" />
+            <source src="/images/showcasevideo2.mp4" type="video/mp4" />
           </video>
           {/* Purple gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-plum-900/50 via-plum-800/30 to-plum-900/70"></div>
@@ -205,9 +205,9 @@ export default function LandingPage() {
           {/* Image Gallery Section */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16">
             <div className="relative h-64 rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
-                 onClick={() => setSelectedImage('/images/IMG_3780.jpeg')}>
+                 onClick={() => setSelectedImage('/images/showcase1.jpeg')}>
               <Image
-                src="/public/images/showcase1.jpeg"
+                src="/images/showcase1.jpeg"
                 alt="Lady training"
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-300"
@@ -239,9 +239,9 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="relative h-64 rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
-                 onClick={() => setSelectedImage('/images/IMG-20260110-WA0047.jpg')}>
+                 onClick={() => setSelectedImage('/images/showcase2.jpeg')}>
               <Image
-                src="/public/images/showcase2.jpeg"
+                src="/images/showcase2.jpeg"
                 alt="Wellness space"
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-300"
