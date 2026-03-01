@@ -167,7 +167,7 @@ export async function sendPaymentConfirmationEmail(
               <span style="font-size: 32px;">💪</span>
             </div>
             <p style="color: #999; margin: 0; font-size: 14px;">If you have any issues with payment, kindly reply to this email or send an email to</p>
-            <a href="mailto:${process.env.ADMIN_EMAIL || 'admin@shegymz.com'}" style="color: #4a90e2; text-decoration: none; font-size: 14px;">${process.env.ADMIN_EMAIL || 'admin@shegymz.com'}</a>
+            <a href="mailto:${process.env.CONTACT_EMAIL || 'info@shegymz.com'}" style="color: #4a90e2; text-decoration: none; font-size: 14px;">${process.env.CONTACT_EMAIL || 'info@shegymz.com'}</a>
           </div>
 
           <!-- Success Banner -->
@@ -213,7 +213,7 @@ export async function sendPaymentConfirmationEmail(
             <div style="margin-bottom: 20px;">
               <span style="color: #ffffff; font-size: 18px; font-weight: 500;">SheGymz</span>
             </div>
-            <a href="mailto:${process.env.ADMIN_EMAIL || 'admin@shegymz.com'}" style="color: #4a90e2; text-decoration: none; font-size: 14px;">${process.env.ADMIN_EMAIL || 'admin@shegymz.com'}</a>
+            <a href="mailto:${process.env.CONTACT_EMAIL || 'info@shegymz.com'}" style="color: #4a90e2; text-decoration: none; font-size: 14px;">${process.env.CONTACT_EMAIL || 'info@shegymz.com'}</a>
             
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #555;">
               <p style="color: #999; font-size: 14px; margin: 0;">Your recurring monthly subscription is now active</p>
@@ -342,7 +342,7 @@ export async function sendPaymentFailedEmail(
 
             <div style="text-align: center; margin: 30px 0;">
               <p style="color: #666; margin-bottom: 15px;">Need help? Contact us:</p>
-              <a href="mailto:${process.env.ADMIN_EMAIL || 'admin@shegymz.com'}" 
+              <a href="mailto:${process.env.CONTACT_EMAIL || 'info@shegymz.com'}" 
                  style="display: inline-block; background-color: #E91E63; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
                 Contact Support
               </a>
