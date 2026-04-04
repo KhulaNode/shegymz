@@ -14,6 +14,9 @@ RUN npm ci --legacy-peer-deps
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# OpenSSL needed so prisma generate picks the correct binary target (linux-musl-openssl-3.0.x)
+RUN apk add --no-cache openssl
+
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
@@ -38,6 +41,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# OpenSSL is required by the Prisma query engine on Alpine
+RUN apk add --no-cache openssl
+
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
@@ -53,8 +59,8 @@ COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/ts-node ./node_modules/ts-node
 COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
 COPY --from=builder /app/node_modules/typescript ./node_modules/typescript
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
-COPY --from=builder /app/node_modules/.bin/ts-node ./node_modules/.bin/ts-node
+# Copy the entire .bin directory so co-located WASM files (prisma_schema_build_bg.wasm etc.) are included
+COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
 
 # Copy startup entrypoint
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
