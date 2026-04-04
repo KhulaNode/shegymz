@@ -41,3 +41,9 @@ Guide.md
 # Payment records — these are runtime data, not source code.
 # In production, back them up from the Docker volume, not from git.
 /data
+
+# SQLite databases
+data/
+prisma/data/
+*.db
+*.db-journal

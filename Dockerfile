@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -19,6 +19,9 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Copy source code
 COPY . .
+
+# Generate Prisma Client (must happen before build)
+RUN npx prisma generate
 
 # Build the Next.js application
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -40,7 +43,23 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Create data directory for payment records (mounted as volume in production)
+# Copy Prisma schema, migrations, seed, and scripts (needed for migrate deploy + db seed at startup)
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/tsconfig.scripts.json ./tsconfig.scripts.json
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/ts-node ./node_modules/ts-node
+COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
+COPY --from=builder /app/node_modules/typescript ./node_modules/typescript
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder /app/node_modules/.bin/ts-node ./node_modules/.bin/ts-node
+
+# Copy startup entrypoint
+COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
+
+# Create data directory for the SQLite database and payment records
 RUN mkdir -p /app/data
 
 # Set correct permissions
@@ -53,4 +72,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["/bin/sh", "docker-entrypoint.sh"]
