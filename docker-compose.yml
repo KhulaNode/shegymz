@@ -61,9 +61,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3000:3000"
 
   # ────────────────────────────────────────────────────────────────────────────
   # Metabase — admin / analytics UI
@@ -109,8 +108,8 @@ services:
       - metabase-data:/metabase-data
     networks:
       - shegymz-network
-    ports:
-      - "${METABASE_PORT:-3001}:3000"
+    # ports:
+    #   - "${METABASE_PORT:-3001}:3000"
 
 volumes:
   postgres-data:
