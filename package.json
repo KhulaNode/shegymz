@@ -11,9 +11,14 @@
   },
   "dependencies": {
     "@plunk/node": "^3.0.3",
+    "@prisma/client": "^5.9.1",
     "next": "^15.0.0",
+    "prisma": "^5.9.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.7",
