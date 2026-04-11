@@ -56,7 +56,7 @@ export default function Footer() {
               Privacy
             </h4>
             <p className="text-xs text-warmgray-600 leading-relaxed">
-              SheGymZ is a private wellness space for womenshaped by trust, privacy, and a sense of community shaped by trust, privacy, and a sense of community.
+              SheGymZ is a private wellness space for women, shaped by trust, privacy, and a sense of community.
             </p>
           </div>
 
@@ -72,9 +72,9 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <span>✉️</span>
-                <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@@shegymz.com'}`}
+                <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@shegymz.com'}`}
                    className="hover:text-plum-800 transition-colors">
-                  {process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@@shegymz.com'}
+                  {process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@shegymz.com'}
                 </a>
               </li>
             </ul>

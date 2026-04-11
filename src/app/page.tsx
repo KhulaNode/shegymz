@@ -219,7 +219,7 @@ export default function LandingPage() {
             </div>
 
             {/* Right: Image */}
-            <div className="relative h-96 md:h-full min-h-[500px] rounded overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+            <div className="relative h-96 md:h-full min-h-[500px] rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
                  onClick={() => setSelectedImage('/images/IMG_3757.jpeg')}>
               <Image
                 src="/images/IMG_3757.jpeg"
@@ -368,7 +368,7 @@ export default function LandingPage() {
               alt="SheGymZ"
               width={180}
               height={90}
-              className="h-18 w-auto object-contain mx-auto opacity-40"
+              className="h-16 w-auto object-contain mx-auto opacity-40"
             />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
