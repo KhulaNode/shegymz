@@ -11,22 +11,63 @@ datasource db {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum SubscriptionIntentStatus {
+  PENDING_PAYMENT
+  OPTED_OUT_UNPAID_REMINDERS
+  PAID_ACCOUNT_PENDING
+  ACCOUNT_CREATED
+  EXPIRED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Users
 // ─────────────────────────────────────────────────────────────────────────────
 
 model User {
-  id           String    @id @default(cuid())
-  email        String?   @unique
-  username     String?   @unique
-  passwordHash String?
-  name         String?
-  imageUrl     String?
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  lastLoginAt  DateTime?
+  id              String    @id @default(cuid())
+  email           String    @unique
+  username        String?   @unique
+  passwordHash    String?
+  fullName        String?
+  imageUrl        String?
+  isActive        Boolean   @default(true)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  roles UserRole[]
+  roles               UserRole[]
+  accounts            Account[]
+  subscriptions       Subscription[]
+  subscriptionIntents SubscriptionIntent[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OAuth / Credentials Accounts
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String   // "google" | "credentials"
+  providerAccountId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -49,4 +90,68 @@ model UserRole {
   role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Subscription Intent  (pre-user onboarding record, created on form submit)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SubscriptionIntent {
+  id                       String                   @id @default(cuid())
+  email                    String
+  fullName                 String
+  phone                    String?
+  planCode                 String                   @default("monthly")
+  status                   SubscriptionIntentStatus @default(PENDING_PAYMENT)
+  yocoCheckoutId           String?
+  yocoPaymentId            String?
+  paymentUrl               String?
+  providerReference        String?
+  userId                   String?
+
+  // Activation token (hash only — raw token is never stored)
+  activationTokenHash      String?                  @unique
+  activationTokenExpiresAt DateTime?
+  activationUsedAt         DateTime?
+
+  // Reminder tracking
+  paymentReminderSentAt    DateTime?
+  paymentReminderCount     Int                      @default(0)
+  activationReminderSentAt DateTime?
+  activationReminderCount  Int                      @default(0)
+  optedOutAt               DateTime?
+  nextReminderAt           DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  subscription Subscription?
+
+  @@index([email])
+  @@index([status])
+  @@index([nextReminderAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Subscription  (active membership, created after verified payment + activation)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Subscription {
+  id                String             @id @default(cuid())
+  userId            String
+  status            SubscriptionStatus @default(ACTIVE)
+  provider          String             @default("yoco")
+  providerReference String?
+  startedAt         DateTime?
+  endsAt            DateTime?
+  intentId          String?            @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  intent SubscriptionIntent? @relation(fields: [intentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
 }

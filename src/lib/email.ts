@@ -1,21 +1,42 @@
-import Plunk from '@plunk/node';
-
 /**
  * Email Service using Plunk
- * 
- * Handles all email notifications for the application:
- * - New subscription notifications to admin
- * - Payment confirmation emails to members
- * - Form submission notifications
- * 
- * Setup:
- * 1. Get your API key from https://useplunk.com
- * 2. Add PLUNK_API_KEY to your .env.local file
- * 3. Verify sender email in your Plunk dashboard
+ *
+ * Calls the Plunk transactional email API directly via fetch.
+ * API docs: https://docs.useplunk.com/api-reference/transactional/send-transactional-email
  */
 
-// Initialize Plunk client
-const plunk = new Plunk(process.env.PLUNK_API_KEY || '');
+const PLUNK_API_URL = 'https://next-api.useplunk.com/v1/send';
+
+async function sendEmail(opts: { to: string; subject: string; body: string; from?: string }) {
+  const apiKey = process.env.PLUNK_API_KEY;
+  if (!apiKey) {
+    console.error('[email] PLUNK_API_KEY is not set');
+    throw new Error('PLUNK_API_KEY is not configured');
+  }
+
+  const from =
+    opts.from ??
+    process.env.PLUNK_FROM_EMAIL ??
+    process.env.ADMIN_EMAIL ??
+    'hello@shegymz.com';
+
+  const res = await fetch(PLUNK_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({ to: opts.to, subject: opts.subject, body: opts.body, from }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    console.error(`[email] Plunk API error ${res.status}:`, text);
+    throw new Error(`Plunk API error ${res.status}: ${text}`);
+  }
+
+  return res.json();
+}
 
 interface SubscriptionEmailData {
   name: string;
@@ -65,7 +86,7 @@ export async function sendNewSubscriptionNotification(
       </div>
     `;
 
-    await plunk.emails.send({
+    await sendEmail({
       to: adminEmail,
       subject: `New Subscription: ${data.name}`,
       body: emailBody,
@@ -129,7 +150,7 @@ export async function sendSubscriptionInitiatedEmail(
       </div>
     `;
 
-    await plunk.emails.send({
+    await sendEmail({
       to: data.email,
       subject: 'Welcome to SheGymz - Complete Your Payment',
       body: emailBody,
@@ -226,7 +247,7 @@ export async function sendPaymentConfirmationEmail(
       </html>
     `;
 
-    await plunk.emails.send({
+    await sendEmail({
       to: data.email,
       subject: 'Payment Receipt - SheGymz Membership',
       body: emailBody,
@@ -268,7 +289,7 @@ export async function sendPaymentReceivedNotification(
       </div>
     `;
 
-    await plunk.emails.send({
+    await sendEmail({
       to: adminEmail,
       subject: `Payment Received: ${data.name} - ${data.amount}`,
       body: emailBody,
@@ -366,7 +387,7 @@ export async function sendPaymentFailedEmail(
       </html>
     `;
 
-    await plunk.emails.send({
+    await sendEmail({
       to: data.email,
       subject: 'Payment Failed - SheGymz Membership',
       body: emailBody,
@@ -415,7 +436,7 @@ export async function sendFreeTrialRequestEmail(data: {
       </div>
     `;
 
-    await plunk.emails.send({
+    await sendEmail({
       to: adminEmail,
       subject: `Free Trial Request: ${data.name}`,
       body: emailBody,
@@ -457,7 +478,7 @@ export async function sendFormSubmissionEmail(
       </div>
     `;
 
-    await plunk.emails.send({
+    await sendEmail({
       to: adminEmail,
       subject: `New ${formType} Submission`,
       body: emailBody,
@@ -467,6 +488,187 @@ export async function sendFormSubmissionEmail(
     return true;
   } catch (error) {
     console.error('Failed to send form submission email:', error);
+    return false;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Activation & Reminder Emails
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ActivationEmailData {
+  name: string;
+  email: string;
+  activationUrl: string;
+  amount?: string;
+  paymentDate?: string;
+  reference?: string;
+}
+
+/**
+ * Sent after verified payment — contains the one-time account activation link.
+ */
+export async function sendActivationEmail(data: ActivationEmailData): Promise<boolean> {
+  try {
+    const appName  = 'SheGymZ';
+    const contact  = process.env.CONTACT_EMAIL || 'admin@shegymz.com';
+
+    const emailBody = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f9f9f9;">
+        <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e0e0e0;">
+
+          <!-- Header -->
+          <div style="background:#4b0d6b;padding:32px 24px;text-align:center;">
+            <h1 style="margin:0;color:#fff;font-size:26px;letter-spacing:-0.5px;">${appName}</h1>
+            <p style="margin:8px 0 0;color:#d8b4fe;font-size:14px;">Private Women&apos;s Wellness Club</p>
+          </div>
+
+          <!-- Body -->
+          <div style="padding:32px 24px;">
+            <h2 style="margin:0 0 8px;color:#1a1a1a;font-size:22px;">Payment Confirmed — Activate Your Account</h2>
+            <p style="color:#555;font-size:15px;margin:0 0 24px;">Hi ${data.name},</p>
+            <p style="color:#555;font-size:15px;margin:0 0 24px;">
+              Your payment has been confirmed. ${data.amount ? `<strong>${data.amount}</strong> received on ${data.paymentDate ?? ''}.` : ''}
+              You&apos;re almost in — click the button below to set up your account.
+            </p>
+
+            <!-- CTA -->
+            <div style="text-align:center;margin:32px 0;">
+              <a href="${data.activationUrl}"
+                 style="display:inline-block;background:#4b0d6b;color:#fff;padding:14px 36px;
+                        text-decoration:none;border-radius:6px;font-weight:700;font-size:16px;
+                        letter-spacing:-0.2px;">
+                Activate My Account
+              </a>
+            </div>
+
+            <!-- What to expect -->
+            <div style="background:#f5f0ff;border-radius:6px;padding:20px;margin:0 0 24px;">
+              <p style="margin:0 0 10px;font-weight:600;color:#4b0d6b;">What happens next:</p>
+              <ol style="margin:0;padding-left:20px;color:#555;font-size:14px;line-height:1.7;">
+                <li>Click the button above</li>
+                <li>Choose Google SSO <em>or</em> set a password</li>
+                <li>You&apos;re in — enjoy your SheGymZ membership!</li>
+              </ol>
+            </div>
+
+            <p style="color:#888;font-size:13px;margin:0 0 8px;">
+              This link expires in ${process.env.ACTIVATION_TOKEN_EXPIRES_HOURS ?? '48'} hours.
+              If you did not request this, contact us at
+              <a href="mailto:${contact}" style="color:#4b0d6b;">${contact}</a>.
+            </p>
+            ${data.reference ? `<p style="color:#aaa;font-size:12px;margin:0;">Reference: ${data.reference}</p>` : ''}
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#fafafa;border-top:1px solid #eee;padding:16px 24px;text-align:center;">
+            <p style="margin:0;color:#aaa;font-size:12px;">&copy; ${new Date().getFullYear()} ${appName}. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await sendEmail({
+      to: data.email,
+      subject: `${appName} — Activate your account`,
+      body: emailBody,
+    });
+
+    console.log(`[email] Activation email sent to: ${data.email}`);
+    return true;
+  } catch (error) {
+    console.error('[email] Failed to send activation email:', (error as Error).message);
+    return false;
+  }
+}
+
+/**
+ * Reminder for unpaid intents — resend the payment link.
+ */
+export async function sendPaymentReminderEmail(data: {
+  name: string;
+  email: string;
+  paymentLink: string;
+  unsubscribeUrl?: string;
+}): Promise<boolean> {
+  try {
+    const emailBody = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <h2 style="color:#4b0d6b;">Complete Your SheGymZ Membership</h2>
+        <p>Hi ${data.name},</p>
+        <p>You started a membership request but haven&apos;t completed payment yet. Your spot is still available!</p>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${data.paymentLink}"
+             style="display:inline-block;background:#4b0d6b;color:#fff;padding:14px 32px;
+                    text-decoration:none;border-radius:6px;font-weight:700;font-size:15px;">
+            Complete Payment
+          </a>
+        </div>
+        <p style="color:#888;font-size:13px;">
+          If you no longer wish to receive reminders,
+          ${data.unsubscribeUrl ? `<a href="${data.unsubscribeUrl}" style="color:#888;">click here to unsubscribe</a>.` : 'reply to this email.'}
+        </p>
+        <p>— The SheGymZ Team</p>
+      </div>
+    `;
+
+    await sendEmail({
+      to: data.email,
+      subject: 'SheGymZ — Complete your membership payment',
+      body: emailBody,
+    });
+
+    console.log(`[email] Payment reminder sent to: ${data.email}`);
+    return true;
+  } catch (error) {
+    console.error('[email] Failed to send payment reminder:', (error as Error).message);
+    return false;
+  }
+}
+
+/**
+ * Reminder for paid-but-not-yet-activated intents — resend a fresh activation link.
+ */
+export async function sendActivationReminderEmail(data: {
+  name: string;
+  email: string;
+  activationUrl: string;
+}): Promise<boolean> {
+  try {
+    const emailBody = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <h2 style="color:#4b0d6b;">Your SheGymZ Account is Waiting</h2>
+        <p>Hi ${data.name},</p>
+        <p>Your payment is confirmed but you haven&apos;t activated your account yet. Here&apos;s a fresh activation link:</p>
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${data.activationUrl}"
+             style="display:inline-block;background:#4b0d6b;color:#fff;padding:14px 32px;
+                    text-decoration:none;border-radius:6px;font-weight:700;font-size:15px;">
+            Activate My Account
+          </a>
+        </div>
+        <p style="color:#888;font-size:13px;">
+          This link expires in ${process.env.ACTIVATION_TOKEN_EXPIRES_HOURS ?? '48'} hours.
+          If you need help, contact us at ${process.env.CONTACT_EMAIL || 'admin@shegymz.com'}.
+        </p>
+        <p>— The SheGymZ Team</p>
+      </div>
+    `;
+
+    await sendEmail({
+      to: data.email,
+      subject: 'SheGymZ — Activate your account (reminder)',
+      body: emailBody,
+    });
+
+    console.log(`[email] Activation reminder sent to: ${data.email}`);
+    return true;
+  } catch (error) {
+    console.error('[email] Failed to send activation reminder:', (error as Error).message);
     return false;
   }
 }

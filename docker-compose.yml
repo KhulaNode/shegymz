@@ -37,6 +37,11 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=production
+      # ── Auth
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-https://shegymz.com}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       # ── Database
       - DATABASE_URL=postgresql://${POSTGRES_USER:-shegymz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-shegymzdb}
       # ── Yoco Payments
@@ -61,8 +66,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # ports:
-    #   - "3000:3000"
+    ports:
+      - "3000:3000"
 
   # ────────────────────────────────────────────────────────────────────────────
   # Metabase — admin / analytics UI
@@ -108,8 +113,8 @@ services:
       - metabase-data:/metabase-data
     networks:
       - shegymz-network
-    # ports:
-    #   - "${METABASE_PORT:-3001}:3000"
+    ports:
+      - "${METABASE_PORT:-3001}:3000"
 
 volumes:
   postgres-data:

@@ -10,6 +10,7 @@ import {
   sendNewSubscriptionNotification,
   sendSubscriptionInitiatedEmail,
 } from '@/lib/email';
+import { prisma } from '@/lib/prisma';
 
 /**
  * POST /api/subscribe
@@ -103,7 +104,32 @@ export async function POST(request: NextRequest) {
     paymentStore.update(paymentRecordId, {
       providerReference: checkout.providerReference ?? '',
     });
+    // ── Create SubscriptionIntent in DB (non-fatal if it fails) ───────────────
+    try {
+      const intent = await prisma.subscriptionIntent.create({
+        data: {
+          email:             userId,
+          fullName:          name.trim(),
+          phone:             phone.trim(),
+          planCode:          resolvedPlanId,
+          status:            'PENDING_PAYMENT',
+          yocoCheckoutId:    checkout.providerReference ?? null,
+          paymentUrl:        checkout.checkoutUrl,
+          providerReference: checkout.providerReference ?? null,
+        },
+      });
 
+      // Embed intentId into paymentStore metadata so the webhook can do a direct lookup
+      const currentRecord = paymentStore.findById(paymentRecordId);
+      if (currentRecord) {
+        paymentStore.update(paymentRecordId, {
+          metadata: { ...currentRecord.metadata, intentId: intent.id },
+        });
+      }
+    } catch (dbErr) {
+      // Non-fatal — the Yoco payment flow continues without the DB intent
+      console.error('[subscribe] Failed to create SubscriptionIntent:', (dbErr as Error).message);
+    }
     // ── Send email notifications (non-blocking) ───────────────────────────────
     const emailData = {
       name: name.trim(),

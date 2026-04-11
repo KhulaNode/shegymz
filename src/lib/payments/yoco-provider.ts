@@ -88,16 +88,15 @@ export class YocoProvider implements IPaymentProvider {
       });
 
       if (!response.ok) {
-        const errData = (await response.json().catch(() => ({}))) as {
-          errorMessage?: string;
-          displayMessage?: string;
-        };
+        const errData = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        console.error('[yoco] createCheckout error', response.status, JSON.stringify(errData));
+        const typed = errData as { errorMessage?: string; displayMessage?: string };
         return {
           success: false,
           error:
-            errData.errorMessage ??
-            errData.displayMessage ??
-            `Yoco API error ${response.status}`,
+            typed.errorMessage ??
+            typed.displayMessage ??
+            `Yoco API error ${response.status}: ${JSON.stringify(errData)}`,
         };
       }
 

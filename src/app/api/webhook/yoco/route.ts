@@ -5,7 +5,10 @@ import {
   sendPaymentConfirmationEmail,
   sendPaymentReceivedNotification,
   sendPaymentFailedEmail,
+  sendActivationEmail,
 } from '@/lib/email';
+import { prisma } from '@/lib/prisma';
+import { generateActivationToken, activationExpiresAt } from '@/lib/activation';
 
 /**
  * POST /api/webhook/yoco
@@ -146,33 +149,81 @@ async function handlePaymentSucceeded(event: YocoWebhookPayload) {
     paymentStore.update(record.id, {
       status: 'paid',
       paidAt,
-      providerReference, // ensure it's set (handles the creation-race edge case)
+      providerReference,
     });
 
     console.log('[Yoco webhook] Membership activated for userId:', record.userId);
 
-    // ── Send confirmation emails (non-blocking) ─────────────────────────────
-    const amountZAR = `R${(payload.amount / 100).toFixed(2)}`;
+    const amountZAR  = `R${(payload.amount / 100).toFixed(2)}`;
     const paymentDate = new Date(paidAt).toLocaleDateString('en-ZA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      year: 'numeric', month: 'long', day: 'numeric',
     });
 
+    // ── Advance SubscriptionIntent → PAID_ACCOUNT_PENDING + send activation email ──
+    try {
+      const intentId = (metadata.intentId as string | undefined);
+      const intent = intentId
+        ? await prisma.subscriptionIntent.findUnique({ where: { id: intentId } })
+        : await prisma.subscriptionIntent.findFirst({
+            where: { email: record.metadata.email, status: 'PENDING_PAYMENT' },
+            orderBy: { createdAt: 'desc' },
+          });
+
+      if (intent && intent.status === 'PENDING_PAYMENT') {
+        const { raw, hash } = generateActivationToken();
+        const expiresAt     = activationExpiresAt();
+        const baseUrl       = (process.env.APP_BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+        const activationUrl = `${baseUrl}/activate?token=${raw}`;
+
+        await prisma.subscriptionIntent.update({
+          where: { id: intent.id },
+          data: {
+            status:                   'PAID_ACCOUNT_PENDING',
+            yocoPaymentId:            providerReference,
+            activationTokenHash:      hash,
+            activationTokenExpiresAt: expiresAt,
+          },
+        });
+
+        sendActivationEmail({
+          name:        record.metadata.name,
+          email:       record.metadata.email,
+          activationUrl,
+          amount:      amountZAR,
+          paymentDate,
+          reference:   providerReference,
+        }).catch((e) => console.error('[Yoco webhook] Activation email error:', (e as Error).message));
+
+        sendPaymentReceivedNotification({
+          name:        record.metadata.name,
+          email:       record.metadata.email,
+          amount:      amountZAR,
+          paymentDate,
+          reference:   providerReference,
+        }).catch((e) => console.error('[Yoco webhook] Admin email error:', (e as Error).message));
+
+        return; // activation email sent — skip legacy path
+      }
+    } catch (dbErr) {
+      console.error('[Yoco webhook] SubscriptionIntent update failed:', (dbErr as Error).message);
+      // Non-fatal — fall through to legacy email
+    }
+
+    // ── Fallback: legacy confirmation email (no DB intent found) ─────────────
     Promise.all([
       sendPaymentConfirmationEmail({
-        name: record.metadata.name,
-        email: record.metadata.email,
-        amount: amountZAR,
+        name:        record.metadata.name,
+        email:       record.metadata.email,
+        amount:      amountZAR,
         paymentDate,
-        reference: providerReference,
+        reference:   providerReference,
       }),
       sendPaymentReceivedNotification({
-        name: record.metadata.name,
-        email: record.metadata.email,
-        amount: amountZAR,
+        name:        record.metadata.name,
+        email:       record.metadata.email,
+        amount:      amountZAR,
         paymentDate,
-        reference: providerReference,
+        reference:   providerReference,
       }),
     ]).catch((err) => {
       console.error('[Yoco webhook] Email error:', (err as Error).message);
