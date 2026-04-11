@@ -28,8 +28,6 @@ import {
  *  2. Add webhook URL: https://yourdomain.com/api/webhook/yoco
  *  3. Copy the webhook secret and set it as YOCO_WEBHOOK_SECRET.
  *  4. Subscribe to: payment.succeeded, payment.failed, payment.cancelled.
- *
- * For local testing use ngrok — see Docs/YOCO_SMOKE_TEST.md.
  */
 
 interface YocoWebhookPayload {

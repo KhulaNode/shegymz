@@ -3,11 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { data: session, status } = useSession();
 
   return (
     <nav className="sticky top-0 z-40 backdrop-blur-md bg-neutral-50/80 border-b border-warmgray-200">
@@ -55,21 +53,6 @@ export default function Navigation() {
           >
             Subscribe Here 
           </Link>
-          {status === 'loading' ? null : session ? (
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="px-3 lg:px-5 py-1.5 border border-neutral-400 text-neutral-600 text-sm font-semibold rounded hover:bg-neutral-100 transition-colors"
-            >
-              Sign out
-            </button>
-          ) : (
-            <Link
-              href="/login"
-              className="px-3 lg:px-5 py-1.5 border border-neutral-400 text-neutral-600 text-sm font-semibold rounded hover:bg-neutral-100 transition-colors"
-            >
-              Login
-            </Link>
-          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -122,22 +105,6 @@ export default function Navigation() {
             >
               Subscribe Here
             </Link>
-            {session ? (
-              <button
-                onClick={() => { setIsMenuOpen(false); signOut({ callbackUrl: '/' }); }}
-                className="block w-full px-6 py-3 border border-neutral-400 text-neutral-600 text-lg font-semibold rounded hover:bg-neutral-100 transition-colors text-center"
-              >
-                Sign out
-              </button>
-            ) : (
-              <Link
-                href="/login"
-                className="block w-full px-6 py-3 border border-neutral-400 text-neutral-600 text-lg font-semibold rounded hover:bg-neutral-100 transition-colors text-center"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Login
-              </Link>
-            )}
           </div>
         </div>
       )}

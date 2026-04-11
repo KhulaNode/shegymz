@@ -9,14 +9,6 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      # ── Database
-      - DATABASE_URL=file:/app/data/app.db
-      # ── Auth (NextAuth)
-      - AUTH_SECRET=${AUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-https://shegymz.com}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - ADMIN_BOOTSTRAP_EMAIL=${ADMIN_BOOTSTRAP_EMAIL}
       # ── Yoco Payments
       - YOCO_SECRET_KEY=${YOCO_SECRET_KEY}
       - YOCO_WEBHOOK_SECRET=${YOCO_WEBHOOK_SECRET}

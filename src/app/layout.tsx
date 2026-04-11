@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
   title: 'SheGymZ – Private Women\'s Wellness Club',
@@ -29,11 +28,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-neutral-50 text-neutral-900 antialiased">
-        <Providers>
-          <div className="flex flex-col min-h-screen">
-            {children}
-          </div>
-        </Providers>
+        <div className="flex flex-col min-h-screen">
+          {children}
+        </div>
       </body>
     </html>
   );
