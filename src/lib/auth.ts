@@ -2,7 +2,6 @@ import { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 
 // Assign the CLIENT role to a user if they have no roles yet.
@@ -17,7 +16,17 @@ async function ensureClientRole(userId: string): Promise<void> {
   });
 }
 
-export const authOptions: NextAuthOptions = {
+/**
+ * Factory that creates NextAuth options.
+ *
+ * @param activationHash  Optional SHA-256 hash read from the `activation_hash`
+ *   cookie by the [...nextauth] route handler. Allows the signIn callback to
+ *   authorise a new Google user whose Google email differs from the email they
+ *   subscribed with — without ever importing `next/headers` here (which would
+ *   force every page that imports auth.ts into dynamic rendering).
+ */
+export function makeAuthOptions(activationHash?: string): NextAuthOptions {
+  return {
   providers: [
     GoogleProvider({
       clientId:     process.env.GOOGLE_CLIENT_ID!,
@@ -69,7 +78,7 @@ export const authOptions: NextAuthOptions = {
         let dbUser = await prisma.user.findUnique({ where: { email } });
         if (!dbUser) {
           // New Google user — must have a verified, paid SubscriptionIntent.
-          // Primary lookup: by Google email (common case — same email used to subscribe).
+          // Primary lookup: by Google email (most common — same email used to subscribe).
           let intent = await prisma.subscriptionIntent.findFirst({
             where: {
               email,
@@ -80,25 +89,18 @@ export const authOptions: NextAuthOptions = {
             orderBy: { createdAt: 'desc' },
           });
 
-          // Fallback: by activation cookie (handles Google email ≠ subscription email).
-          // The cookie is set by POST /api/auth/activate/google just before OAuth starts.
-          if (!intent) {
-            try {
-              const cookieStore = await cookies();
-              const hashCookie  = cookieStore.get('activation_hash')?.value;
-              if (hashCookie) {
-                intent = await prisma.subscriptionIntent.findFirst({
-                  where: {
-                    activationTokenHash:      hashCookie,
-                    status:                   'PAID_ACCOUNT_PENDING',
-                    activationUsedAt:         null,
-                    activationTokenExpiresAt: { gt: new Date() },
-                  },
-                });
-              }
-            } catch {
-              // cookies() unavailable in this context — ignore
-            }
+          // Fallback: by activation hash from the short-lived cookie set by
+          // POST /api/auth/activate/google. Handles the edge case where the
+          // user's Google account email differs from their subscription email.
+          if (!intent && activationHash) {
+            intent = await prisma.subscriptionIntent.findFirst({
+              where: {
+                activationTokenHash:      activationHash,
+                status:                   'PAID_ACCOUNT_PENDING',
+                activationUsedAt:         null,
+                activationTokenExpiresAt: { gt: new Date() },
+              },
+            });
           }
 
           if (!intent) return false;
@@ -170,9 +172,8 @@ export const authOptions: NextAuthOptions = {
     },
 
     /**
-     * jwt — called whenever a JWT is created (sign-in) or read (API requests).
-     *
-     * On first sign-in `user` is populated; attach userId + roles to the token.
+     * jwt — called on sign-in (user is populated) and on session reads (user is undefined).
+     * DB query only runs once at sign-in — subsequent session reads just decode the JWT.
      */
     async jwt({ token, user }) {
       if (user?.email) {
@@ -194,6 +195,7 @@ export const authOptions: NextAuthOptions = {
 
     /**
      * session — shape the client-visible session from the JWT payload.
+     * No DB queries here — pure JWT read, runs on every useSession() call.
      */
     async session({ session, token }) {
       session.user.id                    = token.userId as string;
@@ -210,4 +212,9 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt' },
 
   secret: process.env.NEXTAUTH_SECRET,
-};
+  };
+}
+
+// Default export for use with getServerSession() throughout the app.
+// No activationHash needed — that path is only used during Google OAuth activation.
+export const authOptions = makeAuthOptions();
