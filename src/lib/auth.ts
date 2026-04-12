@@ -2,6 +2,7 @@ import { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 
 // Assign the CLIENT role to a user if they have no roles yet.
@@ -68,8 +69,8 @@ export const authOptions: NextAuthOptions = {
         let dbUser = await prisma.user.findUnique({ where: { email } });
         if (!dbUser) {
           // New Google user — must have a verified, paid SubscriptionIntent.
-          // This blocks open Google sign-up without payment.
-          const intent = await prisma.subscriptionIntent.findFirst({
+          // Primary lookup: by Google email (common case — same email used to subscribe).
+          let intent = await prisma.subscriptionIntent.findFirst({
             where: {
               email,
               status: 'PAID_ACCOUNT_PENDING',
@@ -78,6 +79,28 @@ export const authOptions: NextAuthOptions = {
             },
             orderBy: { createdAt: 'desc' },
           });
+
+          // Fallback: by activation cookie (handles Google email ≠ subscription email).
+          // The cookie is set by POST /api/auth/activate/google just before OAuth starts.
+          if (!intent) {
+            try {
+              const cookieStore = await cookies();
+              const hashCookie  = cookieStore.get('activation_hash')?.value;
+              if (hashCookie) {
+                intent = await prisma.subscriptionIntent.findFirst({
+                  where: {
+                    activationTokenHash:      hashCookie,
+                    status:                   'PAID_ACCOUNT_PENDING',
+                    activationUsedAt:         null,
+                    activationTokenExpiresAt: { gt: new Date() },
+                  },
+                });
+              }
+            } catch {
+              // cookies() unavailable in this context — ignore
+            }
+          }
+
           if (!intent) return false;
 
           dbUser = await prisma.user.create({

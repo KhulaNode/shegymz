@@ -94,8 +94,28 @@ function ActivateContent() {
 
   // ── Google activation ─────────────────────────────────────────────────────
   async function handleGoogleActivation() {
-    // auth.ts signIn callback will find the PAID_ACCOUNT_PENDING intent by email
-    // and handle User + Subscription creation automatically.
+    setLoading(true);
+    setError('');
+    try {
+      // Stage the activation: validates the token and sets a short-lived cookie
+      // so the NextAuth signIn callback can authorise any Google account, not
+      // just one whose email matches the subscription email.
+      const res = await fetch('/api/auth/activate/google', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ token }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setError(data.error ?? 'Could not prepare Google sign-in. Please try again.');
+        return;
+      }
+    } catch {
+      setError('Could not prepare Google sign-in. Please try again.');
+      return;
+    } finally {
+      setLoading(false);
+    }
     await signIn('google', { callbackUrl: '/' });
   }
 
