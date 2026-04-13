@@ -10,16 +10,26 @@ import { makeAuthOptions } from '@/lib/auth';
  * Using NextRequest here (instead of importing next/headers in auth.ts)
  * keeps auth.ts free of dynamic APIs, which means pages that call
  * getServerSession() can still be statically rendered/cached.
+ *
+ * Next.js 15 makes route params async (a Promise), so we must await
+ * context.params before passing it to the NextAuth handler. NextAuth v4
+ * uses context.params.nextauth (e.g. ['error'], ['callback','google'])
+ * to determine which action to run — without it every route 500s.
  */
+
+type RouteContext = { params: Promise<{ nextauth: string[] }> };
+
 function makeHandler(req: NextRequest) {
   const activationHash = req.cookies.get('activation_hash')?.value;
   return NextAuth(makeAuthOptions(activationHash));
 }
 
-export function GET(req: NextRequest) {
-  return makeHandler(req)(req);
+export async function GET(req: NextRequest, context: RouteContext) {
+  const params = await context.params;
+  return makeHandler(req)(req, { params });
 }
 
-export function POST(req: NextRequest) {
-  return makeHandler(req)(req);
+export async function POST(req: NextRequest, context: RouteContext) {
+  const params = await context.params;
+  return makeHandler(req)(req, { params });
 }
