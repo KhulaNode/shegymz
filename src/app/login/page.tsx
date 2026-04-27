@@ -168,7 +168,7 @@ export default function LoginPage() {
                   </div>
                   <div className="flex gap-3 items-start">
                     <span className="text-plum-900 font-bold text-sm w-5 shrink-0">2</span>
-                    <p className="text-sm text-neutral-700">Complete payment via Yoco</p>
+                    <p className="text-sm text-neutral-700">Complete payment via Paystack</p>
                   </div>
                   <div className="flex gap-3 items-start">
                     <span className="text-plum-900 font-bold text-sm w-5 shrink-0">3</span>

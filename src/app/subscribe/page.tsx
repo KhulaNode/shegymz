@@ -77,12 +77,13 @@ export default function SubscribePage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to initiate payment');
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || 'Failed to initiate payment');
       }
 
       const { redirectUrl } = await response.json();
 
-      // Redirect to Yoco hosted checkout
+      // Redirect to the hosted Paystack checkout
       setStep('processing');
       window.location.href = redirectUrl;
     } catch (err) {

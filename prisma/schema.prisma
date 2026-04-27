@@ -103,8 +103,8 @@ model SubscriptionIntent {
   phone                    String?
   planCode                 String                   @default("monthly")
   status                   SubscriptionIntentStatus @default(PENDING_PAYMENT)
-  yocoCheckoutId           String?
-  yocoPaymentId            String?
+  providerCheckoutId       String?
+  providerPaymentId        String?
   paymentUrl               String?
   providerReference        String?
   userId                   String?
@@ -141,7 +141,7 @@ model Subscription {
   id                String             @id @default(cuid())
   userId            String
   status            SubscriptionStatus @default(ACTIVE)
-  provider          String             @default("yoco")
+  provider          String             @default("paystack")
   providerReference String?
   startedAt         DateTime?
   endsAt            DateTime?

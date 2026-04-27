@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
  * Open self-registration has been replaced by the payment-gated activation flow.
  * New accounts are created only via POST /api/auth/activate after verified payment.
  *
- * New members: /subscribe → Yoco payment → activation email → /activate?token=xxx
+ * New members: /subscribe → Paystack payment → activation email → /activate?token=xxx
  */
 export async function POST() {
   return NextResponse.json(

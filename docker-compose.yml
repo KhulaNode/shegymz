@@ -32,6 +32,8 @@ services:
       dockerfile: Dockerfile
     container_name: shegymz-web
     restart: unless-stopped
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,9 +46,9 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       # ── Database
       - DATABASE_URL=postgresql://${POSTGRES_USER:-shegymz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-shegymzdb}
-      # ── Yoco Payments
-      - YOCO_SECRET_KEY=${YOCO_SECRET_KEY}
-      - YOCO_WEBHOOK_SECRET=${YOCO_WEBHOOK_SECRET}
+      # ── Paystack Payments
+      - PAYSTACK_SECRET_KEY
+      - PAYSTACK_PLAN_CODE
       - APP_BASE_URL=${APP_BASE_URL:-https://shegymz.com}
       - PAYMENTS_DATA_DIR=/app/data
       # ── Subscription pricing
@@ -66,8 +68,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # ports:
-    #   - "3000:3000"
+    ports:
+      - "3000:3000"
 
   # ────────────────────────────────────────────────────────────────────────────
   # Metabase — admin / analytics UI

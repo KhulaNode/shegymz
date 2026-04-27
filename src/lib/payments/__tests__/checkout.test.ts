@@ -25,7 +25,7 @@ function makeRecord(overrides: Partial<PaymentRecord> = {}): PaymentRecord {
     id: `pay_test_${Date.now()}`,
     userId: 'tester@example.com',
     planId: DEFAULT_PLAN_ID,
-    provider: 'yoco',
+    provider: 'paystack',
     providerReference: '',
     amount: 39900,
     currency: 'ZAR',

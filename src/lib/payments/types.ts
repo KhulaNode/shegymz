@@ -1,13 +1,13 @@
 /**
  * Payment Provider — Type Definitions
  *
- * All payments go through Yoco Online Payments (https://developer.yoco.com).
+ * All payments go through Paystack.
  * Payment records are persisted to PAYMENTS_DATA_DIR/payments.json
  * (atomic file writes; mount a Docker volume in production).
  */
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'cancelled';
-export type PaymentProviderName = 'yoco';
+export type PaymentProviderName = 'paystack';
 
 export interface Plan {
   id: string;
@@ -25,7 +25,7 @@ export interface PaymentRecord {
   userId: string;
   planId: string;
   provider: PaymentProviderName;
-  /** Provider-assigned ID: Yoco checkout ID */
+  /** Provider-assigned payment reference */
   providerReference: string;
   /** Amount in cents */
   amount: number;

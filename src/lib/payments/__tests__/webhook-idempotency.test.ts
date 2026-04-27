@@ -28,7 +28,7 @@ function makePendingRecord(providerRef: string): PaymentRecord {
     id: `pay_idem_${providerRef}`,
     userId: 'member@example.com',
     planId: 'monthly',
-    provider: 'yoco',
+    provider: 'paystack',
     providerReference: providerRef,
     amount: 39900,
     currency: 'ZAR',
@@ -38,7 +38,7 @@ function makePendingRecord(providerRef: string): PaymentRecord {
   };
 }
 
-/** Simulate the activation logic used in the Yoco webhook handler */
+/** Simulate the activation logic used in the Paystack webhook handler */
 function simulateWebhookActivation(
   providerRef: string,
   paidAt: string,

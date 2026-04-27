@@ -4,8 +4,7 @@ import Link from 'next/link';
  * GET /payment-cancelled
  *
  * User is redirected here when they cancel at the checkout, or when the
- * provider reports a payment failure.  The ?reason=failure query param
- * is set by the Yoco failureUrl to distinguish the two cases.
+ * provider reports a payment failure.
  */
 export default function PaymentCancelledPage() {
   return (

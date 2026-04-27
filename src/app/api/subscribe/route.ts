@@ -15,12 +15,12 @@ import { prisma } from '@/lib/prisma';
 /**
  * POST /api/subscribe
  *
- * Creates a Yoco checkout session for the selected plan and returns a redirect URL.
+ * Creates a Paystack checkout session for the selected plan and returns a redirect URL.
  *
  * Flow:
  *  1. Validate request body.
  *  2. Create a 'pending' payment record in the store.
- *  3. Call YocoProvider to create a hosted checkout.
+ *  3. Call the active payment provider to create a hosted checkout.
  *  4. Update the payment record with the provider reference.
  *  5. Return { redirectUrl, ref } to the frontend.
  */
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     // ── Create pending payment record ─────────────────────────────────────────
     const paymentRecordId = `pay_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
     const userId = email.toLowerCase().trim();
-    const providerName: 'yoco' = 'yoco';
+    const providerName: 'paystack' = 'paystack';
 
     paymentStore.create({
       id: paymentRecordId,
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
           phone:             phone.trim(),
           planCode:          resolvedPlanId,
           status:            'PENDING_PAYMENT',
-          yocoCheckoutId:    checkout.providerReference ?? null,
+          providerCheckoutId: checkout.providerReference ?? null,
           paymentUrl:        checkout.checkoutUrl,
           providerReference: checkout.providerReference ?? null,
         },
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         });
       }
     } catch (dbErr) {
-      // Non-fatal — the Yoco payment flow continues without the DB intent
+      // Non-fatal — the hosted payment flow continues without the DB intent
       console.error('[subscribe] Failed to create SubscriptionIntent:', (dbErr as Error).message);
     }
     // ── Send email notifications (non-blocking) ───────────────────────────────

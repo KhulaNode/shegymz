@@ -119,7 +119,7 @@ export function makeAuthOptions(activationHash?: string): NextAuthOptions {
             data: {
               userId:            dbUser.id,
               status:            'ACTIVE',
-              provider:          'yoco',
+              provider:          'paystack',
               providerReference: intent.providerReference ?? null,
               startedAt:         new Date(),
               intentId:          intent.id,

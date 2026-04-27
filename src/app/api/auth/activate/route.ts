@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId:            user.id,
           status:            'ACTIVE',
-          provider:          'yoco',
+          provider:          'paystack',
           providerReference: intent.providerReference ?? null,
           startedAt:         new Date(),
           intentId:          intent.id,

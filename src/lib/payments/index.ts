@@ -1,5 +1,5 @@
 import type { IPaymentProvider } from './types';
-import { YocoProvider } from './yoco-provider';
+import { PaystackProvider } from './paystack-provider';
 
 // Re-export everything consumers need
 export type {
@@ -17,7 +17,7 @@ export { paymentStore } from './payment-store';
 export { getPlan, PLANS, DEFAULT_PLAN_ID } from './plans';
 
 export function getPaymentProvider(): IPaymentProvider {
-  return new YocoProvider();
+  return new PaystackProvider();
 }
 
-export { YocoProvider } from './yoco-provider';
+export { PaystackProvider } from './paystack-provider';

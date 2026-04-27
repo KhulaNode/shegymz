@@ -1,7 +1,7 @@
 /**
  * GET /payment-success
  *
- * User is redirected here after completing the Yoco checkout.
+ * User is redirected here after completing the Paystack checkout.
  *
  * ?ref=pay_xxx — internal payment record ID, embedded in the provider's
  * success URL by our checkout creation logic.  Used to look up the record
@@ -57,7 +57,7 @@ function PaymentStatusContent() {
         if (attempts < MAX_ATTEMPTS) {
           setTimeout(check, INTERVAL_MS);
         } else {
-          // Yoco redirected to success URL — treat as confirmed even if webhook
+          // Paystack redirected to the callback URL — treat as confirmed even if webhook
           // hasn't fired yet; webhook will activate membership asynchronously
           setState('paid');
         }
