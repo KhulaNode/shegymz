@@ -4,10 +4,28 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+const CAROUSEL_VIDEOS = [
+  '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.11.02.mp4',
+  '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.13.23.mp4',
+  '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.11.03.mp4',
+  '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.11.20.mp4',
+  '/video%20carousel/WhatsApp%20Video%202026-03-01%20at%2002.11.39.mp4',
+  
+];
 
 export default function LandingPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCarouselIndex(prev => (prev + 1) % CAROUSEL_VIDEOS.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
 
   return (
     <>
@@ -15,16 +33,36 @@ export default function LandingPage() {
 
       {/* HERO SECTION */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Background image with overlay */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/IMG_3776.jpeg"
-            alt="Private women's fitness space"
-            fill
-            className="object-cover"
-            priority
-            quality={85}
-          />
+        {/* Background video carousel with overlay */}
+        <div className="absolute inset-0 z-0 bg-black">
+          {CAROUSEL_VIDEOS.map((src, i) => (
+            <div
+              key={src}
+              className={`absolute inset-0 transition-opacity duration-700 ${
+                i === carouselIndex ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {/* Blurred fill layer — covers the side bars on desktop */}
+              <video
+                src={src}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover scale-110 blur-md brightness-50"
+                aria-hidden="true"
+              />
+              {/* Sharp centred layer — portrait video at full quality */}
+              <video
+                src={src}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover md:object-contain"
+              />
+            </div>
+          ))}
           {/* Purple gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-plum-900/50 via-plum-800/30 to-plum-900/70"></div>
         </div>
@@ -38,12 +76,20 @@ export default function LandingPage() {
             24/7 Access. Personal trainers included. No contracts.
           </p>
 
-          <Link
-            href="/subscribe"
-            className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-rose-300 text-plum-900 font-semibold rounded hover:bg-rose-200 transition-all duration-300 text-base sm:text-lg shadow-lg"
-          >
-            Subscribe Here
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/subscribe"
+              className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-rose-300 text-plum-900 font-semibold rounded hover:bg-rose-200 transition-all duration-300 text-base sm:text-lg shadow-lg"
+            >
+              Subscribe Here
+            </Link>
+            <Link
+              href="/free-trial"
+              className="inline-block px-6 sm:px-8 py-3 sm:py-4 bg-white/20 text-white font-semibold rounded border border-white/60 hover:bg-white/30 transition-all duration-300 text-base sm:text-lg shadow-lg backdrop-blur-sm"
+            >
+              Try 3 Days Free
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -173,7 +219,7 @@ export default function LandingPage() {
             </div>
 
             {/* Right: Image */}
-            <div className="relative h-96 md:h-full min-h-[500px] rounded overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+            <div className="relative h-96 md:h-full min-h-[500px] rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
                  onClick={() => setSelectedImage('/images/IMG_3757.jpeg')}>
               <Image
                 src="/images/IMG_3757.jpeg"
@@ -196,10 +242,10 @@ export default function LandingPage() {
           {/* Image Gallery Section */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16">
             <div className="relative h-64 rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
-                 onClick={() => setSelectedImage('/images/IMG_3780.jpeg')}>
+                 onClick={() => setSelectedImage('/images/showcase1.jpeg')}>
               <Image
-                src="/images/IMG_3780.jpeg"
-                alt="Training equipment"
+                src="/images/showcase1.jpeg"
+                alt="Lady training"
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-300"
                 quality={85}
@@ -230,9 +276,9 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="relative h-64 rounded overflow-hidden cursor-pointer group hover:opacity-90 transition-opacity"
-                 onClick={() => setSelectedImage('/images/IMG-20260110-WA0047.jpg')}>
+                 onClick={() => setSelectedImage('/images/showcase2.jpeg')}>
               <Image
-                src="/images/IMG-20260110-WA0047.jpg"
+                src="/images/showcase2.jpeg"
                 alt="Wellness space"
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-300"
@@ -322,7 +368,7 @@ export default function LandingPage() {
               alt="SheGymZ"
               width={180}
               height={90}
-              className="h-18 w-auto object-contain mx-auto opacity-40"
+              className="h-16 w-auto object-contain mx-auto opacity-40"
             />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">

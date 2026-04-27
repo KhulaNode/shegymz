@@ -1,243 +1,236 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  verifyPaystackWebhook, 
-  verifyPaystackTransaction,
-  formatPaystackAmount,
-  enableRecurringSubscription,
-  PaystackWebhookEvent 
-} from '@/lib/paystack';
-import { 
-  sendPaymentConfirmationEmail, 
+import { PaystackProvider } from '@/lib/payments/paystack-provider';
+import { paymentStore } from '@/lib/payments/payment-store';
+import {
+  sendPaymentConfirmationEmail,
   sendPaymentReceivedNotification,
-  sendPaymentFailedEmail
+  sendPaymentFailedEmail,
+  sendActivationEmail,
 } from '@/lib/email';
+import { prisma } from '@/lib/prisma';
+import { generateActivationToken, activationExpiresAt } from '@/lib/activation';
 
 /**
  * POST /api/webhook/paystack
  *
- * Paystack webhook handler for payment notifications.
+ * Paystack webhook handler for payment events.
  *
- * IMPORTANT SECURITY NOTES:
- * 1. ALWAYS verify the webhook signature before processing
- * 2. Use HTTPS in production
- * 3. Store webhook payloads for audit trail
- * 4. Implement idempotency to handle duplicate webhooks
- * 5. Verify payment status independently by calling Paystack API
- *
- * Webhook Events:
- * - charge.success: Payment successful
- * - charge.failed: Payment failed
- * - subscription.create: New subscription created
- * - subscription.disable: Subscription cancelled
+ * Security:
+ *  - Signature verified using x-paystack-signature and the secret key.
+ *  - Always responds 200 after processing to avoid duplicate retries for handled events.
  *
  * Setup in Paystack Dashboard:
- * 1. Go to Settings → Webhooks
- * 2. Add webhook URL: https://yourdomain.com/api/webhook/paystack
- * 3. Select events to listen to
- * 4. Save webhook
- *
- * TODO (Production - HIGH PRIORITY):
- * - Store webhook events in database for audit trail
- * - Implement idempotency check (prevent duplicate processing)
- * - Update member status in database
- * - Handle failed payments
- * - Handle subscription cancellations
- * - Add comprehensive error logging
- * - Implement retry mechanism for failed database operations
- * - Add monitoring and alerting
+ *  1. Go to Settings -> API Keys & Webhooks.
+ *  2. Add webhook URL: https://yourdomain.com/api/webhook/paystack
+ *  3. Subscribe to: charge.success, charge.failed.
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Get the raw body as text for signature verification
-    const body = await request.text();
-    const signature = request.headers.get('x-paystack-signature');
 
-    if (!signature) {
-      console.warn('Paystack webhook received without signature');
-      return NextResponse.json(
-        { error: 'No signature provided' },
-        { status: 400 }
-      );
-    }
-
-    // CRITICAL: Verify webhook signature
-    const isValidSignature = verifyPaystackWebhook(body, signature);
-
-    if (!isValidSignature) {
-      console.warn('Invalid Paystack webhook signature');
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 400 }
-      );
-    }
-
-    // Parse the webhook payload
-    const event: PaystackWebhookEvent = JSON.parse(body);
-
-    console.log('Paystack webhook received:', {
-      event: event.event,
-      reference: event.data.reference,
-      status: event.data.status,
-      amount: event.data.amount,
-      email: event.data.customer.email,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Handle different webhook events
-    switch (event.event) {
-      case 'charge.success':
-        await handlePaymentSuccess(event);
-        break;
-
-      case 'charge.failed':
-        await handlePaymentFailed(event);
-        break;
-
-      case 'subscription.create':
-        console.log('Subscription created:', event.data.reference);
-        // TODO: Handle subscription creation
-        break;
-
-      case 'subscription.disable':
-        console.log('Subscription cancelled:', event.data.reference);
-        // TODO: Handle subscription cancellation
-        break;
-
-      default:
-        console.log('Unhandled webhook event:', event.event);
-    }
-
-    // Always respond 200 OK to acknowledge receipt
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error('Paystack webhook error:', error);
-    // Still respond 200 to prevent Paystack from retrying
-    return NextResponse.json({ received: true, error: 'Processing error' });
-  }
+interface PaystackWebhookPayload {
+  event: 'charge.success' | 'charge.failed' | string;
+  data: {
+    amount: number;
+    currency: string;
+    status: string;
+    reference: string;
+    paid_at?: string;
+    gateway_response?: string;
+    metadata?: {
+      paymentRecordId?: string;
+      userId?: string;
+      planId?: string;
+      name?: string;
+      email?: string;
+      phone?: string;
+      intentId?: string;
+      [key: string]: unknown;
+    };
+    customer?: {
+      email?: string;
+    };
+  };
 }
 
-/**
- * Handle successful payment
- */
-async function handlePaymentSuccess(event: PaystackWebhookEvent) {
+export async function POST(request: NextRequest) {
+  let rawBody: string;
   try {
-    // Additional verification: Query Paystack API to confirm payment
-    const verification = await verifyPaystackTransaction(event.data.reference);
+    rawBody = await request.text();
+  } catch {
+    return NextResponse.json({ error: 'Failed to read request body' }, { status: 400 });
+  }
 
-    if (!verification.success || verification.data?.status !== 'success') {
-      console.warn('Payment verification failed:', event.data.reference);
+  const signatureHeader = request.headers.get('x-paystack-signature') ?? '';
+  if (!PaystackProvider.verifyWebhookSignature(rawBody, signatureHeader)) {
+    console.warn('[Paystack webhook] Invalid or missing signature');
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+  }
+
+  let event: PaystackWebhookPayload;
+  try {
+    event = JSON.parse(rawBody) as PaystackWebhookPayload;
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+  }
+
+  console.log('[Paystack webhook] Received event:', {
+    event: event.event,
+    reference: event.data?.reference,
+    status: event.data?.status,
+  });
+
+  switch (event.event) {
+    case 'charge.success':
+      await handlePaymentSucceeded(event);
+      break;
+    case 'charge.failed':
+      await handlePaymentFailed(event);
+      break;
+    default:
+      console.log('[Paystack webhook] Unhandled event type:', event.event);
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+async function handlePaymentSucceeded(event: PaystackWebhookPayload) {
+  try {
+    const providerReference = event.data.reference;
+    const metadata = event.data.metadata ?? {};
+
+    if (paymentStore.alreadyActivated(providerReference)) {
+      console.log('[Paystack webhook] Payment already activated — skipping:', providerReference);
       return;
     }
 
-    const { customer, amount, reference, metadata, paid_at, authorization } = event.data;
+    let record = metadata.paymentRecordId
+      ? paymentStore.findById(metadata.paymentRecordId as string)
+      : undefined;
 
-    // Debug: Log what we received from webhook
-    console.log('=== WEBHOOK DEBUG ===');
-    console.log('Customer email:', customer.email);
-    console.log('Customer name:', `${customer.first_name} ${customer.last_name}`);
-    console.log('Metadata:', JSON.stringify(metadata, null, 2));
-    console.log('====================');
-
-    const customerEmail = customer.email;
-    const customerName = `${customer.first_name} ${customer.last_name}`.trim();
-
-    console.log(`Payment confirmed for ${customerEmail} - ${formatPaystackAmount(amount)}`);
-    console.log(`Will send receipt email to: ${customerEmail}`);
-
-    // Enable recurring subscription if authorization code is available
-    if (authorization?.authorization_code) {
-      const subscriptionResult = await enableRecurringSubscription(
-        authorization.authorization_code,
-        customerEmail
-      );
-
-      if (subscriptionResult.success) {
-        console.log(`Recurring subscription enabled for ${customerEmail}`);
-        console.log(`Subscription code: ${subscriptionResult.subscriptionCode}`);
-      } else {
-        console.warn(`Failed to enable recurring subscription: ${subscriptionResult.error}`);
-      }
+    if (!record) {
+      record = paymentStore.findByProviderReference(providerReference);
     }
 
-    // Prepare email data with card details
-    const emailData = {
-      name: customerName,
-      email: customerEmail,
-      amount: formatPaystackAmount(amount),
-      paymentDate: new Date(paid_at).toLocaleDateString('en-ZA', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }),
-      subscriptionToken: authorization?.authorization_code || reference,
-      reference: reference,
-      cardLast4: authorization?.last4,
-      cardType: authorization?.card_type,
-    };
+    if (!record) {
+      console.error('[Paystack webhook] No payment record found for:', providerReference);
+      return;
+    }
 
-    // Send payment confirmation emails asynchronously
-    Promise.all([
-      sendPaymentConfirmationEmail(emailData),
-      sendPaymentReceivedNotification(emailData),
-    ]).catch((error) => {
-      console.error('Failed to send payment confirmation emails:', error);
-      // Log but don't fail the webhook
+    const paidAt = event.data.paid_at ?? new Date().toISOString();
+    paymentStore.update(record.id, {
+      status: 'paid',
+      paidAt,
+      providerReference,
     });
 
-    // TODO: Update member status in database
-    // Example:
-    // await db.members.update({
-    //   where: { email: customer.email },
-    //   data: {
-    //     status: 'ACTIVE',
-    //     subscriptionReference: reference,
-    //     authorizationCode: authorization?.authorization_code,
-    //     subscriptionCode: subscriptionResult?.subscriptionCode,
-    //     lastPaymentDate: new Date(paid_at),
-    //   }
-    // });
+    const amountZAR = `R${(event.data.amount / 100).toFixed(2)}`;
+    const paymentDate = new Date(paidAt).toLocaleDateString('en-ZA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
 
-  } catch (error) {
-    console.error('Error handling payment success:', error);
+    try {
+      const intentId = metadata.intentId as string | undefined;
+      const intent = intentId
+        ? await prisma.subscriptionIntent.findUnique({ where: { id: intentId } })
+        : await prisma.subscriptionIntent.findFirst({
+            where: { email: record.metadata.email, status: 'PENDING_PAYMENT' },
+            orderBy: { createdAt: 'desc' },
+          });
+
+      if (intent && intent.status === 'PENDING_PAYMENT') {
+        const { raw, hash } = generateActivationToken();
+        const expiresAt = activationExpiresAt();
+        const baseUrl = (process.env.APP_BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+        const activationUrl = `${baseUrl}/activate?token=${raw}`;
+
+        await prisma.subscriptionIntent.update({
+          where: { id: intent.id },
+          data: {
+            status: 'PAID_ACCOUNT_PENDING',
+            providerPaymentId: providerReference,
+            activationTokenHash: hash,
+            activationTokenExpiresAt: expiresAt,
+          },
+        });
+
+        sendActivationEmail({
+          name: record.metadata.name,
+          email: record.metadata.email,
+          activationUrl,
+          amount: amountZAR,
+          paymentDate,
+          reference: providerReference,
+        }).catch((e) =>
+          console.error('[Paystack webhook] Activation email error:', (e as Error).message),
+        );
+
+        sendPaymentReceivedNotification({
+          name: record.metadata.name,
+          email: record.metadata.email,
+          amount: amountZAR,
+          paymentDate,
+          reference: providerReference,
+        }).catch((e) =>
+          console.error('[Paystack webhook] Admin email error:', (e as Error).message),
+        );
+
+        return;
+      }
+    } catch (dbErr) {
+      console.error('[Paystack webhook] SubscriptionIntent update failed:', (dbErr as Error).message);
+    }
+
+    Promise.all([
+      sendPaymentConfirmationEmail({
+        name: record.metadata.name,
+        email: record.metadata.email,
+        amount: amountZAR,
+        paymentDate,
+        reference: providerReference,
+      }),
+      sendPaymentReceivedNotification({
+        name: record.metadata.name,
+        email: record.metadata.email,
+        amount: amountZAR,
+        paymentDate,
+        reference: providerReference,
+      }),
+    ]).catch((err) => {
+      console.error('[Paystack webhook] Email error:', (err as Error).message);
+    });
+  } catch (err) {
+    console.error('[Paystack webhook] Error in handlePaymentSucceeded:', (err as Error).message);
   }
 }
 
-/**
- * Handle failed payment
- */
-async function handlePaymentFailed(event: PaystackWebhookEvent) {
+async function handlePaymentFailed(event: PaystackWebhookPayload) {
   try {
-    const { customer, gateway_response, reference, amount } = event.data;
+    const providerReference = event.data.reference;
+    const metadata = event.data.metadata ?? {};
 
-    const customerEmail = customer.email;
-    const customerName = `${customer.first_name} ${customer.last_name}`.trim();
+    let record = metadata.paymentRecordId
+      ? paymentStore.findById(metadata.paymentRecordId as string)
+      : paymentStore.findByProviderReference(providerReference);
 
-    console.log(`Payment failed for ${customerEmail} - Reason: ${gateway_response}`);
+    if (record && record.status !== 'paid') {
+      paymentStore.update(record.id, { status: 'failed' });
+    }
 
-    // Send payment failed notification to user
-    const emailData = {
-      name: customerName,
-      email: customerEmail,
-      amount: formatPaystackAmount(amount),
-      reference: reference,
-      reason: gateway_response || 'Payment could not be processed',
-    };
+    if (record) {
+      const amountZAR = `R${(event.data.amount / 100).toFixed(2)}`;
+      sendPaymentFailedEmail({
+        name: record.metadata.name,
+        email: record.metadata.email,
+        amount: amountZAR,
+        reference: providerReference,
+        reason: event.data.gateway_response || 'Payment could not be processed',
+      }).catch((err) => {
+        console.error('[Paystack webhook] Failed email error:', (err as Error).message);
+      });
+    }
 
-    sendPaymentFailedEmail(emailData).catch((error) => {
-      console.error('Failed to send payment failed email:', error);
-    });
-
-    // TODO: Update member status in database
-    // Example:
-    // await db.members.update({
-    //   where: { email: customer.email },
-    //   data: {
-    //     lastPaymentAttempt: new Date(),
-    //     lastPaymentError: gateway_response,
-    //   }
-    // });
-
-  } catch (error) {
-    console.error('Error handling payment failure:', error);
+    console.log('[Paystack webhook] Payment failed for providerReference:', providerReference);
+  } catch (err) {
+    console.error('[Paystack webhook] Error in handlePaymentFailed:', (err as Error).message);
   }
 }

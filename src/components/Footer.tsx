@@ -9,7 +9,7 @@ export default function Footer() {
   return (
     <footer className="mt-auto border-t border-warmgray-200 bg-neutral-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-12 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12 mb-6 sm:mb-8">
           {/* Brand */}
           <div className="text-center sm:text-left">
             <Link href="/" className="inline-block mb-3 sm:mb-4">
@@ -56,8 +56,41 @@ export default function Footer() {
               Privacy
             </h4>
             <p className="text-xs text-warmgray-600 leading-relaxed">
-              SheGymZ is a private wellness space for womenshaped by trust, privacy, and a sense of community shaped by trust, privacy, and a sense of community.
+              SheGymZ is a private wellness space for women, shaped by trust, privacy, and a sense of community.
             </p>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="text-sm font-semibold text-neutral-900 uppercase tracking-widest mb-4">
+              Contact
+            </h4>
+            <ul className="space-y-2 text-sm text-warmgray-600 mb-4">
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5">📍</span>
+                <span>65 Springbok Street, Fauna Park,<br />Polokwane, 0699</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span>✉️</span>
+                <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@shegymz.com'}`}
+                   className="hover:text-plum-800 transition-colors">
+                  {process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@shegymz.com'}
+                </a>
+              </li>
+            </ul>
+            {/* Google Maps embed */}
+            <div className="rounded overflow-hidden border border-warmgray-200">
+              <iframe
+                title="SheGymZ Location"
+                src="https://www.google.com/maps?q=65+Springbok+Street,+Fauna+Park,+Polokwane,+0699,+South+Africa&output=embed"
+                width="100%"
+                height="160"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
           </div>
         </div>
 

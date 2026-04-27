@@ -74,7 +74,7 @@ User submits form
 1. Welcome email sent to user
 2. Admin notification sent
     ↓
-User redirected to PayFast
+User redirected to Paystack checkout
     ↓
 Payment completed
     ↓
