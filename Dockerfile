@@ -14,17 +14,11 @@ RUN npm ci --legacy-peer-deps
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# OpenSSL needed so prisma generate picks the correct binary target (linux-musl-openssl-3.0.x)
-RUN apk add --no-cache openssl
-
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy source code
 COPY . .
-
-# Generate Prisma Client (must happen before build)
-RUN npx prisma generate
 
 # Build the Next.js application
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -41,26 +35,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# OpenSSL is required by the Prisma query engine on Alpine
-RUN apk add --no-cache openssl
-
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-
-# Copy Prisma schema, migrations, seed, and runtime modules (needed at startup)
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
-
-# Copy startup entrypoint
-COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
-
-# Create data directory for payment records
-RUN mkdir -p /app/data
 
 # Set correct permissions
 RUN chown -R nextjs:nodejs /app
@@ -72,4 +50,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["/bin/sh", "docker-entrypoint.sh"]
+CMD ["node", "server.js"]

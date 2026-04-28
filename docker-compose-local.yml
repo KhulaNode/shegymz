@@ -1,31 +1,4 @@
 services:
-
-  # ────────────────────────────────────────────────────────────────────────────
-  # PostgreSQL — primary application database
-  # Internal only — no host port exposed.
-  # ────────────────────────────────────────────────────────────────────────────
-  postgres:
-    image: postgres:16-alpine
-    container_name: shegymz-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB:       ${POSTGRES_DB:-shegymzdb}
-      POSTGRES_USER:     ${POSTGRES_USER:-shegymz}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - shegymz-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shegymz} -d ${POSTGRES_DB:-shegymzdb}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
-  # ────────────────────────────────────────────────────────────────────────────
-  # Next.js application
-  # ────────────────────────────────────────────────────────────────────────────
   shegymz-web:
     build:
       context: .
@@ -34,32 +7,16 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       - NODE_ENV=production
-      # ── Auth
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-https://shegymz.com}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      # ── Database
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-shegymz}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-shegymzdb}
-      # ── Paystack Payments
       - PAYSTACK_SECRET_KEY
       - PAYSTACK_PLAN_CODE
       - APP_BASE_URL=${APP_BASE_URL:-https://shegymz.com}
-      - PAYMENTS_DATA_DIR=/app/data
-      # ── Subscription pricing
       - NEXT_PUBLIC_SUBSCRIPTION_AMOUNT=${NEXT_PUBLIC_SUBSCRIPTION_AMOUNT:-399}
-      # ── Email
       - PLUNK_API_KEY=${PLUNK_API_KEY}
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - CONTACT_EMAIL=${CONTACT_EMAIL:-admin@shegymz.com}
       - NEXT_PUBLIC_CONTACT_EMAIL=${NEXT_PUBLIC_CONTACT_EMAIL:-admin@shegymz.com}
-    volumes:
-      - payments-data:/app/data
     networks:
       - shegymz-network
     healthcheck:
@@ -70,63 +27,6 @@ services:
       start_period: 40s
     ports:
       - "3000:3000"
-
-  # ────────────────────────────────────────────────────────────────────────────
-  # Metabase — admin / analytics UI
-  # Available at http://localhost:${METABASE_PORT:-3001}
-  # Uses its own dedicated postgres instance (metabase-postgres) so it never
-  # touches the application database. Connect the app DB as a data source
-  # inside Metabase: Admin → Databases → Add → host=postgres port=5432.
-  # ────────────────────────────────────────────────────────────────────────────
-  metabase-postgres:
-    image: postgres:16-alpine
-    container_name: shegymz-metabase-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB:       metabasedb
-      POSTGRES_USER:     metabase
-      POSTGRES_PASSWORD: ${METABASE_DB_PASSWORD:-metabase_secret}
-    volumes:
-      - metabase-postgres-data:/var/lib/postgresql/data
-    networks:
-      - shegymz-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U metabase -d metabasedb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
-  metabase:
-    image: metabase/metabase:latest
-    container_name: shegymz-metabase
-    restart: unless-stopped
-    depends_on:
-      metabase-postgres:
-        condition: service_healthy
-    environment:
-      MB_DB_TYPE: postgres
-      MB_DB_DBNAME: metabasedb
-      MB_DB_PORT: 5432
-      MB_DB_USER: metabase
-      MB_DB_PASS: ${METABASE_DB_PASSWORD:-metabase_secret}
-      MB_DB_HOST: metabase-postgres
-    volumes:
-      - metabase-data:/metabase-data
-    networks:
-      - shegymz-network
-    ports:
-      - "${METABASE_PORT:-3001}:3000"
-
-volumes:
-  postgres-data:
-    driver: local
-  payments-data:
-    driver: local
-  metabase-data:
-    driver: local
-  metabase-postgres-data:
-    driver: local
 
 networks:
   shegymz-network:
