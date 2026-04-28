@@ -3,11 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { data: session } = useSession();
 
   return (
     <nav className="sticky top-0 z-40 backdrop-blur-md bg-neutral-50/80 border-b border-warmgray-200">
@@ -55,21 +53,6 @@ export default function Navigation() {
           >
             Subscribe Here 
           </Link>
-          {session ? (
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="px-3 lg:px-5 py-1.5 text-sm font-medium text-neutral-500 hover:text-plum-900 transition-colors"
-            >
-              Sign Out
-            </button>
-          ) : (
-            <Link
-              href="/login"
-              className="px-3 lg:px-5 py-1.5 bg-white border border-plum-900 text-plum-900 text-sm font-semibold rounded hover:bg-plum-50 transition-colors"
-            >
-              Login
-            </Link>
-          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -122,22 +105,6 @@ export default function Navigation() {
             >
               Subscribe Here
             </Link>
-            {session ? (
-              <button
-                onClick={() => { setIsMenuOpen(false); signOut({ callbackUrl: '/' }); }}
-                className="block w-full py-2 text-base font-medium text-neutral-500 hover:text-plum-900 transition-colors text-center"
-              >
-                Sign Out
-              </button>
-            ) : (
-              <Link
-                href="/login"
-                className="block w-full px-6 py-3 bg-white border border-plum-900 text-plum-900 text-lg font-semibold rounded hover:bg-plum-50 transition-colors text-center"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Login
-              </Link>
-            )}
           </div>
         </div>
       )}
