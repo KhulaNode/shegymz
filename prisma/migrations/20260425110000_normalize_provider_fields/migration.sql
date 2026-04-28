@@ -1,3 +1,0 @@
--- Historical no-op kept to preserve migration ordering after provider field normalization.
--- The preceding migration already creates providerCheckoutId/providerPaymentId
--- and defaults Subscription.provider to 'paystack'.
