@@ -1,23 +1,14 @@
-/**
- * GET /payment-success
- *
- * User is redirected here after completing the Paystack checkout.
- *
- * ?ref=pay_xxx — internal payment record ID, embedded in the provider's
- * success URL by our checkout creation logic.  Used to look up the record
- * status from /api/payment/status.
- *
- * The webhook is the authoritative activation path.  This page does a
- * best-effort pull verification as a fallback for users who return
- * before the webhook fires.
- */
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-type PageState = 'checking' | 'paid' | 'pending' | 'failed' | 'unknown';
+type PageState = 'checking' | 'paid' | 'failed' | 'unknown';
+
+function portalUrl() {
+  return process.env.NEXT_PUBLIC_PORTAL_URL || 'https://portal.shegymz.com';
+}
 
 function PaymentStatusContent() {
   const searchParams = useSearchParams();
@@ -30,37 +21,26 @@ function PaymentStatusContent() {
       return;
     }
 
-    let attempts = 0;
-    const MAX_ATTEMPTS = 6;
-    const INTERVAL_MS = 3000;
-
     async function check() {
       try {
-        const res = await fetch(`/api/payment/status?ref=${encodeURIComponent(ref!)}`);
+        const res = await fetch(`/api/payment/status?ref=${encodeURIComponent(ref)}`);
         if (!res.ok) {
           setState('unknown');
           return;
         }
-        const data = (await res.json()) as { status: string };
 
+        const data = (await res.json()) as { status?: string };
         if (data.status === 'paid') {
           setState('paid');
           return;
         }
+
         if (data.status === 'failed' || data.status === 'cancelled') {
           setState('failed');
           return;
         }
 
-        // Status is still pending — retry while webhook catches up
-        attempts += 1;
-        if (attempts < MAX_ATTEMPTS) {
-          setTimeout(check, INTERVAL_MS);
-        } else {
-          // Paystack redirected to the callback URL — treat as confirmed even if webhook
-          // hasn't fired yet; webhook will activate membership asynchronously
-          setState('paid');
-        }
+        setState('unknown');
       } catch {
         setState('unknown');
       }
@@ -72,7 +52,6 @@ function PaymentStatusContent() {
   return (
     <div className="min-h-screen bg-neutral-50 py-20">
       <div className="max-w-2xl mx-auto px-6 text-center">
-
         {state === 'checking' && (
           <>
             <div className="mb-6 flex justify-center">
@@ -90,25 +69,31 @@ function PaymentStatusContent() {
                 ✓
               </div>
             </div>
-            <h1 className="text-4xl font-bold text-plum-900 mb-4">
-              Payment Received
-            </h1>
-            <p className="text-lg text-warmgray-700 mb-8">
-              Your membership is being activated. You&apos;ll receive a confirmation
-              email shortly with your access details.
+            <h1 className="text-4xl font-bold text-plum-900 mb-4">Payment Received</h1>
+            <p className="text-lg text-warmgray-700 mb-6">
+              Your SheGymZ subscription is active. Your portal link has been sent by email.
             </p>
             <div className="bg-rose-100 border border-rose-300 rounded p-6 mb-8">
-              <p className="text-sm text-warmgray-700">
-                Didn&apos;t get an email? Check your spam folder or contact us at{' '}
-                <a href="mailto:admin@shegymz.com" className="underline">
-                  admin@shegymz.com
-                </a>
-                .
+              <p className="text-sm text-warmgray-700 mb-4">
+                Continue into the member experience using the portal link below.
               </p>
+              <a
+                href={portalUrl()}
+                className="inline-block px-8 py-3 bg-plum-900 text-white font-semibold rounded hover:bg-plum-800 transition-colors"
+              >
+                Open SheGymZ Portal
+              </a>
             </div>
+            <p className="text-sm text-warmgray-700 mb-8">
+              Didn&apos;t get the email? Check your spam folder or contact{' '}
+              <a href="mailto:admin@shegymz.com" className="underline">
+                admin@shegymz.com
+              </a>
+              .
+            </p>
             <Link
               href="/"
-              className="inline-block px-8 py-4 bg-plum-900 text-white font-semibold rounded hover:bg-plum-800 transition-colors"
+              className="inline-block px-8 py-4 border border-plum-900 text-plum-900 font-semibold rounded hover:bg-plum-50 transition-colors"
             >
               Return Home
             </Link>
@@ -142,7 +127,6 @@ function PaymentStatusContent() {
             </div>
           </>
         )}
-
       </div>
     </div>
   );
