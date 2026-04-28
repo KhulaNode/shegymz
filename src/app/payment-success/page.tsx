@@ -20,10 +20,11 @@ function PaymentStatusContent() {
       setState('unknown');
       return;
     }
+    const paymentRef = ref;
 
     async function check() {
       try {
-        const res = await fetch(`/api/payment/status?ref=${encodeURIComponent(ref)}`);
+        const res = await fetch(`/api/payment/status?ref=${encodeURIComponent(paymentRef)}`);
         if (!res.ok) {
           setState('unknown');
           return;
