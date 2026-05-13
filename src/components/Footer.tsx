@@ -50,14 +50,28 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Discretion Note */}
+          {/* Legal */}
           <div>
             <h4 className="text-sm font-semibold text-neutral-900 uppercase tracking-widest mb-4">
-              Privacy
+              Legal
             </h4>
-            <p className="text-xs text-warmgray-600 leading-relaxed">
-              SheGymZ is a private wellness space for women, shaped by trust, privacy, and a sense of community.
-            </p>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/terms" className="text-sm text-warmgray-600 hover:text-plum-800 transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="text-sm text-warmgray-600 hover:text-plum-800 transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/acceptable-use" className="text-sm text-warmgray-600 hover:text-plum-800 transition-colors">
+                  Acceptable Use Policy
+                </Link>
+              </li>
+            </ul>
           </div>
 
           {/* Contact */}
@@ -109,14 +123,17 @@ export default function Footer() {
               </a>
             </p>
           </div>
-          <div className="flex gap-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-plum-800 transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-plum-800 transition-colors">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mt-4 md:mt-0">
+            <Link href="/terms" className="hover:text-plum-800 transition-colors">
               Terms of Service
-            </a>
-            <a href="#" className="hover:text-plum-800 transition-colors">
+            </Link>
+            <Link href="/privacy" className="hover:text-plum-800 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/acceptable-use" className="hover:text-plum-800 transition-colors">
+              Acceptable Use Policy
+            </Link>
+            <a href={`mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'admin@shegymz.com'}`} className="hover:text-plum-800 transition-colors">
               Contact
             </a>
           </div>
